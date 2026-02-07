@@ -1,4 +1,4 @@
-import { type ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
 import type { Church, ChurchCategory } from "@/api/churches";
 import { getLocalizedText, type Locale } from "@/stores/locale-store";

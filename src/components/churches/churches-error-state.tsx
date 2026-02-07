@@ -4,7 +4,6 @@ import { AlertCircle } from "lucide-react";
 
 export function ChurchesErrorState({ error }: { error: Error }) {
   return (
-    <>
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center max-w-md">
           <div className="mx-auto h-14 w-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
@@ -19,6 +18,5 @@ export function ChurchesErrorState({ error }: { error: Error }) {
           <Button onClick={() => window.location.reload()}>Try Again</Button>
         </div>
       </div>
-    </>
   );
 }

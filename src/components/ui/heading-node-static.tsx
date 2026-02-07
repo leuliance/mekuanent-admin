@@ -24,7 +24,7 @@ export function HeadingElementStatic({
 
   return (
     <SlateElement
-      as={variant!}
+      as={variant as keyof HTMLElementTagNameMap}
       className={headingVariants({ variant })}
       {...props}
     >

@@ -80,7 +80,7 @@ export function ChurchStatusDialog({
         </DialogHeader>
         {targetStatus === "rejected" && (
           <div className="space-y-2">
-            <label className="text-sm font-medium">Reason for Rejection</label>
+            <label className="text-sm font-medium" htmlFor="rejectedReason">Reason for Rejection</label>
             <Input
               value={rejectedReason}
               onChange={(e) => setRejectedReason(e.target.value)}

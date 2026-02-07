@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, Outlet } from "@tanstack/react-router";
-import { type AdminUser } from "@/routes/__root";
+import type { AdminUser } from "@/routes/__root";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";

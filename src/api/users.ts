@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { Tables } from "@/types/database.types";
+import type { Tables, Database } from "@/types/database.types";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+
+type UserAccountStatusEnum = Database["public"]["Enums"]["user_account_status"];
 
 export type Profile = Tables<"profiles">;
 export type UserRole = Tables<"user_roles">;
@@ -179,24 +181,24 @@ export const updateUserStatus = createServerFn({ method: "POST" })
       .eq("id", data.user_id)
       .single();
 
-    const oldStatus = (profile as unknown as Record<string, unknown>)?.status as string | null;
+    const oldStatus: UserAccountStatusEnum = profile?.status ?? "active";
 
     // Update the status column directly on profiles
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ status: data.status } as Record<string, unknown>)
+      .update({ status: data.status as UserAccountStatusEnum })
       .eq("id", data.user_id);
 
     if (updateError) throw new Error(updateError.message);
 
     // Log the change for audit trail (non-fatal)
     try {
-      await (supabase as any)
+      await supabase
         .from("user_status_log")
         .insert({
           user_id: data.user_id,
-          old_status: oldStatus || "active",
-          new_status: data.status,
+          old_status: oldStatus,
+          new_status: data.status as UserAccountStatusEnum,
           reason: data.reason || null,
           changed_by: data.changed_by,
         });

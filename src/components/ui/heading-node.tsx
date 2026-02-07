@@ -22,7 +22,7 @@ export function HeadingElement({
 }: PlateElementProps & VariantProps<typeof headingVariants>) {
   return (
     <PlateElement
-      as={variant!}
+      as={variant as keyof HTMLElementTagNameMap}
       className={headingVariants({ variant })}
       {...props}
     >

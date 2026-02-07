@@ -1,9 +1,9 @@
 import {
-  ComponentProps,
+  type ComponentProps,
   createContext,
-  HTMLProps,
-  ReactNode,
-  RefObject,
+  type HTMLProps,
+  type ReactNode,
+  type RefObject,
   useCallback,
   useContext,
   useEffect,

@@ -184,22 +184,22 @@ export function useMultibandVolume(
 
     const bufferLength = analyser.frequencyBinCount
     const dataArray = new Float32Array(bufferLength)
-    const sliceStart = opts.loPass!
-    const sliceEnd = opts.hiPass!
+    const sliceStart = opts.loPass ?? 0
+    const sliceEnd = opts.hiPass ?? 600
     const sliceLength = sliceEnd - sliceStart
-    const chunkSize = Math.ceil(sliceLength / opts.bands!)
+    const chunkSize = Math.ceil(sliceLength / (opts.bands ?? 5))
 
     let lastUpdate = 0
-    const updateInterval = opts.updateInterval!
+    const updateInterval = opts.updateInterval ?? 32
 
     const updateVolume = (timestamp: number) => {
       if (timestamp - lastUpdate >= updateInterval) {
         analyser.getFloatFrequencyData(dataArray)
 
         // Process directly without creating intermediate arrays
-        const chunks = new Array(opts.bands!)
+        const chunks = new Array(opts.bands ?? 5)
 
-        for (let i = 0; i < opts.bands!; i++) {
+        for (let i = 0; i < (opts.bands ?? 5); i++) {
           let sum = 0
           let count = 0
           const startIdx = sliceStart + i * chunkSize

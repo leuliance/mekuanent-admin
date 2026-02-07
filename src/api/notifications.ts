@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database.types";
+
+type NotificationType = Database["public"]["Enums"]["notification_type"];
+type NotificationInsert = Database["public"]["Tables"]["notifications"]["Insert"];
 
 // biome-ignore lint/suspicious/noExplicitAny: Required for JSON serialization of Supabase types with unknown fields
 const serialize = <T>(data: T): any => JSON.parse(JSON.stringify(data));
@@ -30,7 +34,7 @@ export const getNotifications = createServerFn({ method: "GET" })
       .range(offset, offset + limit - 1);
 
     if (data.type) {
-      query = query.eq("type", data.type as any);
+      query = query.eq("type", data.type as NotificationType);
     }
 
     const { data: notifications, error, count } = await query;
@@ -85,35 +89,36 @@ export const sendNotification = createServerFn({ method: "POST" })
 
     if (isBroadcast) {
       // Single row for broadcast — user_id is NULL
-      const { error } = await supabase.from("notifications").insert({
+      const row: NotificationInsert = {
         user_id: null,
         type: data.type,
         title: data.title,
         body: data.body,
-        data: data.data || null,
+        data: data.data as NotificationInsert["data"],
         is_read: false,
         is_broadcast: true,
         sent_by: data.sent_by || null,
-      } as any);
+      };
 
+      const { error } = await supabase.from("notifications").insert(row);
       if (error) throw new Error(error.message);
 
       return { success: true, sent: 1, broadcast: true };
     }
 
     // Targeted: insert one row per specified user
-    const notifications = data.user_ids!.map((userId) => ({
+    const notifications: NotificationInsert[] = (data.user_ids ?? []).map((userId) => ({
       user_id: userId,
       type: data.type,
       title: data.title,
       body: data.body,
-      data: data.data || null,
+      data: data.data as NotificationInsert["data"],
       is_read: false,
       is_broadcast: false,
       sent_by: data.sent_by || null,
     }));
 
-    const { error } = await supabase.from("notifications").insert(notifications as any);
+    const { error } = await supabase.from("notifications").insert(notifications);
     if (error) throw new Error(error.message);
 
     return { success: true, sent: notifications.length, broadcast: false };

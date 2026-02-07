@@ -1,10 +1,8 @@
-'use client'
-
 import { CheckCircle, File, Loader2, Upload, X } from 'lucide-react'
 import { createContext, useCallback, useContext, type PropsWithChildren } from 'react'
 
 import { cn } from '@/lib/utils'
-import { type UseSupabaseUploadReturn } from '@/hooks/use-supabase-upload'
+import type { UseSupabaseUploadReturn } from '@/hooks/use-supabase-upload'
 import { Button } from '@/components/ui/button'
 
 export const formatBytes = (
@@ -18,7 +16,7 @@ export const formatBytes = (
 
   if (bytes === 0 || bytes === undefined) return size !== undefined ? `0 ${size}` : '0 bytes'
   const i = size !== undefined ? sizes.indexOf(size) : Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+  return `${parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i] || ''}`
 }
 
 type DropzoneContextType = Omit<UseSupabaseUploadReturn, 'getRootProps' | 'getInputProps'>
@@ -132,8 +130,8 @@ const DropzoneContent = ({ className }: { className?: string }) => {
                 </p>
               ) : loading && !isSuccessfullyUploaded ? (
                 <p className="text-xs text-muted-foreground">Uploading file...</p>
-              ) : !!fileError ? (
-                <p className="text-xs text-destructive">Failed to upload: {fileError.message}</p>
+              ) : fileError ? (
+                <p className="text-xs text-destructive">Failed to upload: {fileError.message || 'Unknown error'}</p>
               ) : isSuccessfullyUploaded ? (
                 <p className="text-xs text-primary">Successfully uploaded file</p>
               ) : (
@@ -173,7 +171,7 @@ const DropzoneContent = ({ className }: { className?: string }) => {
                 Uploading...
               </>
             ) : (
-              <>Upload files</>
+              <div>Upload files</div>
             )}
           </Button>
         </div>
@@ -199,12 +197,13 @@ const DropzoneEmptyState = ({ className }: { className?: string }) => {
       <div className="flex flex-col items-center gap-y-1">
         <p className="text-xs text-muted-foreground">
           Drag and drop or{' '}
-          <a
+          <button
             onClick={() => inputRef.current?.click()}
             className="underline cursor-pointer transition hover:text-foreground"
+            role="button"
           >
             select {maxFiles === 1 ? `file` : 'files'}
-          </a>{' '}
+          </button>{' '}
           to upload
         </p>
         {maxFileSize !== Number.POSITIVE_INFINITY && (
