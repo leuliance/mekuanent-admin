@@ -35,9 +35,10 @@ export function NavUser({
     name: string;
     email: string;
     avatar: string;
+    role: string;
   };
 }) {
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -109,11 +110,32 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (isMobile) setOpenMobile(false);
+                  void navigate({
+                    to: "/dashboard/settings",
+                    search: { tab: "profile" },
+                  });
+                }}
+              >
                 <BadgeCheck className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (isMobile) setOpenMobile(false);
+                  void navigate({
+                    to: "/dashboard/settings",
+                    search: {
+                      tab:
+                        user.role === "super_admin"
+                          ? "payment-gateways"
+                          : "profile",
+                    },
+                  });
+                }}
+              >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>

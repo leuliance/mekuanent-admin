@@ -175,10 +175,11 @@ export function ToolbarSplitButton({
   );
 }
 
-type ToolbarSplitButtonPrimaryProps = ToolbarPrimitive.Button.Props &
-  VariantProps<typeof toolbarButtonVariants> & {
-    className?: string;
-  };
+type ToolbarSplitButtonPrimaryProps =
+  React.ComponentPropsWithoutRef<'span'> &
+    VariantProps<typeof toolbarButtonVariants> & {
+      className?: string;
+    };
 
 export function ToolbarSplitButtonPrimary({
   children,

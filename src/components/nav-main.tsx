@@ -15,6 +15,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 export function NavMain({
@@ -32,6 +33,11 @@ export function NavMain({
   }[]
 }) {
   const { pathname } = useLocation()
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setOpenMobile(false)
+  }
 
   return (
     <SidebarGroup>
@@ -49,7 +55,11 @@ export function NavMain({
           if (!hasSubItems) {
             return (
               <SidebarMenuItem key={item.title}>
-                <Link to={item.url} className="w-full">
+                <Link
+                  to={item.url}
+                  className="w-full"
+                  onClick={closeMobileSidebar}
+                >
                   <SidebarMenuButton
                     tooltip={item.title}
                     isActive={!!isActive}
@@ -87,7 +97,11 @@ export function NavMain({
                     const isSubActive = pathname === subItem.url || pathname === `${subItem.url}/`
                     return (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <Link to={subItem.url} className="w-full">
+                        <Link
+                          to={subItem.url}
+                          className="w-full"
+                          onClick={closeMobileSidebar}
+                        >
                           <SidebarMenuSubButton isActive={!!isSubActive}>
                             <span>{subItem.title}</span>
                           </SidebarMenuSubButton>

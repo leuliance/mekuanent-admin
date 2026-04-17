@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database.types";
+
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 // biome-ignore lint/suspicious/noExplicitAny: Required for JSON serialization of Supabase types with unknown fields
 const serialize = <T>(data: T): any => JSON.parse(JSON.stringify(data));
@@ -53,8 +56,8 @@ export const updateProfile = createServerFn({ method: "POST" })
     if (authError || !user) throw new Error("Not authenticated");
 
     const cleanData = Object.fromEntries(
-      Object.entries(data).filter(([_, v]) => v !== undefined)
-    );
+      Object.entries(data).filter(([_, v]) => v !== undefined),
+    ) as ProfileUpdate;
 
     const { error } = await supabase
       .from("profiles")

@@ -285,9 +285,9 @@ function ChurchesPage() {
   const hasFilters = !!(searchParams.search || searchParams.status || searchParams.category);
 
   return (
-    <>
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        <div className="mx-auto max-w-7xl min-w-0 space-y-6">
           {/* Page Title & Stats */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -361,9 +361,9 @@ function ChurchesPage() {
 
           {/* Table / Empty State */}
           {isSearching ? (
-            <div className="bg-card rounded-xl border overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+            <div className="bg-card rounded-xl border">
+              <div className="touch-pan-x overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+                <table className="w-full min-w-[720px]">
                   <thead className="bg-muted/50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -426,9 +426,9 @@ function ChurchesPage() {
             />
           ) : (
             <>
-              <div className="bg-card rounded-xl border overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+              <div className="bg-card rounded-xl border">
+                <div className="touch-pan-x overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+                  <table className="w-full min-w-[720px]">
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -569,6 +569,6 @@ function ChurchesPage() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

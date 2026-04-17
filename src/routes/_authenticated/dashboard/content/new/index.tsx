@@ -92,8 +92,8 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-5">
-      <h2 className="text-sm font-semibold text-foreground mb-4">{title}</h2>
+    <div className="min-w-0 rounded-xl border bg-card p-4 sm:p-5">
+      <h2 className="mb-4 text-sm font-semibold text-foreground">{title}</h2>
       {children}
     </div>
   );
@@ -166,8 +166,8 @@ function NewContentPage() {
 
   return (
     <>
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
+        <div className="mx-auto w-full max-w-3xl min-w-0 space-y-6">
           <Button
             variant="ghost"
             size="sm"
@@ -323,32 +323,38 @@ function NewContentPage() {
 
             {/* Description */}
             <SectionCard title="Description">
-              <Tabs defaultValue="en">
-                <TabsList>
-                  <TabsTrigger value="en">EN</TabsTrigger>
-                  <TabsTrigger value="am">AM</TabsTrigger>
+              <Tabs defaultValue="en" className="min-w-0">
+                <TabsList className="mb-3 h-auto w-full flex-wrap justify-start gap-1 bg-muted/50 p-1">
+                  <TabsTrigger value="en" className="flex-1 sm:flex-none">
+                    English
+                  </TabsTrigger>
+                  <TabsTrigger value="am" className="flex-1 sm:flex-none">
+                    አማርኛ
+                  </TabsTrigger>
                 </TabsList>
-                <TabsContent value="en">
+                <TabsContent value="en" className="mt-0 min-w-0">
                   <form.Field name="description_en">
                     {(field) => (
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <RichTextEditor
                           value={field.state.value}
                           onChange={(html) => field.handleChange(html)}
                           placeholder="Describe the content in English..."
+                          className="min-w-0 max-w-full"
                         />
                       </div>
                     )}
                   </form.Field>
                 </TabsContent>
-                <TabsContent value="am">
+                <TabsContent value="am" className="mt-0 min-w-0">
                   <form.Field name="description_am">
                     {(field) => (
-                      <div className="space-y-1.5">
+                      <div className="min-w-0 space-y-1.5">
                         <RichTextEditor
                           value={field.state.value}
                           onChange={(html) => field.handleChange(html)}
                           placeholder="Describe the content in Amharic..."
+                          className="min-w-0 max-w-full"
                         />
                       </div>
                     )}

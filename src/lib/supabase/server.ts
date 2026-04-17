@@ -40,9 +40,16 @@ import { createServerClient } from '@supabase/ssr'
 import type { Database } from "@/types/database.types";
 
 export function getSupabaseServerClient() {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) {
+    throw new Error(
+      "Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY (check .env / .env.local)",
+    );
+  }
   return createServerClient<Database>(
-    process.env.VITE_SUPABASE_URL!,
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY!,
+    url,
+    key,
     {
       cookies: {
         getAll() {

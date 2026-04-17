@@ -134,11 +134,77 @@ export type Database = {
           },
         ]
       }
+      bible_audio: {
+        Row: {
+          audio_url: string
+          chapter_id: string
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          language: string
+          narrator: string | null
+        }
+        Insert: {
+          audio_url: string
+          chapter_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          language?: string
+          narrator?: string | null
+        }
+        Update: {
+          audio_url?: string
+          chapter_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          language?: string
+          narrator?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_audio_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "bible_chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bible_bookmark_collections: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       bible_bookmarks: {
         Row: {
           book_id: string
           chapter_id: string
-          created_at: string | null
+          collection_id: string | null
+          created_at: string
           id: string
           note: string | null
           user_id: string
@@ -147,7 +213,8 @@ export type Database = {
         Insert: {
           book_id: string
           chapter_id: string
-          created_at?: string | null
+          collection_id?: string | null
+          created_at?: string
           id?: string
           note?: string | null
           user_id: string
@@ -156,7 +223,8 @@ export type Database = {
         Update: {
           book_id?: string
           chapter_id?: string
-          created_at?: string | null
+          collection_id?: string | null
+          created_at?: string
           id?: string
           note?: string | null
           user_id?: string
@@ -178,6 +246,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bible_bookmarks_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "bible_bookmark_collections"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bible_bookmarks_verse_id_fkey"
             columns: ["verse_id"]
             isOneToOne: false
@@ -189,24 +264,33 @@ export type Database = {
       bible_books: {
         Row: {
           book_number: number
+          category: string
           chapter_count: number
+          created_at: string
           id: string
           name: Json
-          testament: Json
+          paratext_code: string
+          testament: string
         }
         Insert: {
           book_number: number
-          chapter_count: number
+          category: string
+          chapter_count?: number
+          created_at?: string
           id?: string
           name?: Json
-          testament?: Json
+          paratext_code: string
+          testament: string
         }
         Update: {
           book_number?: number
+          category?: string
           chapter_count?: number
+          created_at?: string
           id?: string
           name?: Json
-          testament?: Json
+          paratext_code?: string
+          testament?: string
         }
         Relationships: []
       }
@@ -214,19 +298,25 @@ export type Database = {
         Row: {
           book_id: string
           chapter_number: number
+          created_at: string
           id: string
+          usfm_content: Json | null
           verse_count: number
         }
         Insert: {
           book_id: string
           chapter_number: number
+          created_at?: string
           id?: string
-          verse_count: number
+          usfm_content?: Json | null
+          verse_count?: number
         }
         Update: {
           book_id?: string
           chapter_number?: number
+          created_at?: string
           id?: string
+          usfm_content?: Json | null
           verse_count?: number
         }
         Relationships: [
@@ -241,42 +331,39 @@ export type Database = {
       }
       bible_cross_references: {
         Row: {
-          created_at: string | null
-          description: Json | null
+          created_at: string
+          description: Json
           id: string
-          reference: Json
-          reference_book_id: string | null
-          reference_chapter: number | null
-          reference_verse_end: number | null
-          reference_verse_start: number | null
+          ref_book_id: string | null
+          ref_chapter: number | null
+          ref_verse_end: number | null
+          ref_verse_start: number | null
           verse_id: string
         }
         Insert: {
-          created_at?: string | null
-          description?: Json | null
+          created_at?: string
+          description?: Json
           id?: string
-          reference: Json
-          reference_book_id?: string | null
-          reference_chapter?: number | null
-          reference_verse_end?: number | null
-          reference_verse_start?: number | null
+          ref_book_id?: string | null
+          ref_chapter?: number | null
+          ref_verse_end?: number | null
+          ref_verse_start?: number | null
           verse_id: string
         }
         Update: {
-          created_at?: string | null
-          description?: Json | null
+          created_at?: string
+          description?: Json
           id?: string
-          reference?: Json
-          reference_book_id?: string | null
-          reference_chapter?: number | null
-          reference_verse_end?: number | null
-          reference_verse_start?: number | null
+          ref_book_id?: string | null
+          ref_chapter?: number | null
+          ref_verse_end?: number | null
+          ref_verse_start?: number | null
           verse_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "bible_cross_references_reference_book_id_fkey"
-            columns: ["reference_book_id"]
+            foreignKeyName: "bible_cross_references_ref_book_id_fkey"
+            columns: ["ref_book_id"]
             isOneToOne: false
             referencedRelation: "bible_books"
             referencedColumns: ["id"]
@@ -292,27 +379,27 @@ export type Database = {
       }
       bible_footnotes: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
           marker: Json
           note: Json
-          type: string | null
+          type: string
           verse_id: string
         }
         Insert: {
-          created_at?: string | null
-          id?: string
-          marker: Json
-          note: Json
-          type?: string | null
-          verse_id: string
-        }
-        Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           marker?: Json
           note?: Json
-          type?: string | null
+          type?: string
+          verse_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          marker?: Json
+          note?: Json
+          type?: string
           verse_id?: string
         }
         Relationships: [
@@ -325,21 +412,345 @@ export type Database = {
           },
         ]
       }
+      bible_highlights: {
+        Row: {
+          book_id: string
+          chapter_id: string
+          color: string
+          created_at: string
+          id: string
+          user_id: string
+          verse_id: string
+        }
+        Insert: {
+          book_id: string
+          chapter_id: string
+          color?: string
+          created_at?: string
+          id?: string
+          user_id: string
+          verse_id: string
+        }
+        Update: {
+          book_id?: string
+          chapter_id?: string
+          color?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          verse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_highlights_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "bible_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bible_highlights_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "bible_chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bible_highlights_verse_id_fkey"
+            columns: ["verse_id"]
+            isOneToOne: false
+            referencedRelation: "bible_verses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bible_notes: {
+        Row: {
+          book_id: string
+          chapter_id: string
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          verse_id: string
+        }
+        Insert: {
+          book_id: string
+          chapter_id: string
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          verse_id: string
+        }
+        Update: {
+          book_id?: string
+          chapter_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          verse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_notes_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "bible_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bible_notes_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "bible_chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bible_notes_verse_id_fkey"
+            columns: ["verse_id"]
+            isOneToOne: false
+            referencedRelation: "bible_verses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bible_reading_plan_days: {
+        Row: {
+          created_at: string
+          day_number: number
+          id: string
+          plan_id: string
+          title: Json | null
+        }
+        Insert: {
+          created_at?: string
+          day_number: number
+          id?: string
+          plan_id: string
+          title?: Json | null
+        }
+        Update: {
+          created_at?: string
+          day_number?: number
+          id?: string
+          plan_id?: string
+          title?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_reading_plan_days_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "bible_reading_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bible_reading_plan_readings: {
+        Row: {
+          book_id: string
+          chapter_end: number | null
+          chapter_start: number
+          day_id: string
+          id: string
+          sort_order: number
+          verse_end: number | null
+          verse_start: number | null
+        }
+        Insert: {
+          book_id: string
+          chapter_end?: number | null
+          chapter_start: number
+          day_id: string
+          id?: string
+          sort_order?: number
+          verse_end?: number | null
+          verse_start?: number | null
+        }
+        Update: {
+          book_id?: string
+          chapter_end?: number | null
+          chapter_start?: number
+          day_id?: string
+          id?: string
+          sort_order?: number
+          verse_end?: number | null
+          verse_start?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_reading_plan_readings_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "bible_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bible_reading_plan_readings_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "bible_reading_plan_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bible_reading_plans: {
+        Row: {
+          cover_image: string | null
+          created_at: string
+          description: Json
+          duration_days: number
+          id: string
+          is_active: boolean
+          title: Json
+        }
+        Insert: {
+          cover_image?: string | null
+          created_at?: string
+          description?: Json
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          title?: Json
+        }
+        Update: {
+          cover_image?: string | null
+          created_at?: string
+          description?: Json
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          title?: Json
+        }
+        Relationships: []
+      }
+      bible_translations: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: Json
+          script: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: Json
+          script?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: Json
+          script?: string
+        }
+        Relationships: []
+      }
+      bible_user_reading_plans: {
+        Row: {
+          created_at: string
+          current_day: number
+          id: string
+          is_completed: boolean
+          plan_id: string
+          start_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_day?: number
+          id?: string
+          is_completed?: boolean
+          plan_id: string
+          start_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_day?: number
+          id?: string
+          is_completed?: boolean
+          plan_id?: string
+          start_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_user_reading_plans_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "bible_reading_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bible_user_reading_progress: {
+        Row: {
+          completed_at: string | null
+          day_id: string
+          id: string
+          is_completed: boolean
+          user_plan_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          day_id: string
+          id?: string
+          is_completed?: boolean
+          user_plan_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          day_id?: string
+          id?: string
+          is_completed?: boolean
+          user_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_user_reading_progress_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "bible_reading_plan_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bible_user_reading_progress_user_plan_id_fkey"
+            columns: ["user_plan_id"]
+            isOneToOne: false
+            referencedRelation: "bible_user_reading_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bible_verses: {
         Row: {
           chapter_id: string
+          created_at: string
           id: string
           text: Json
           verse_number: number
         }
         Insert: {
           chapter_id: string
+          created_at?: string
           id?: string
           text?: Json
           verse_number: number
         }
         Update: {
           chapter_id?: string
+          created_at?: string
           id?: string
           text?: Json
           verse_number?: number
@@ -1363,6 +1774,7 @@ export type Database = {
           id: string
           is_broadcast: boolean
           is_read: boolean
+          is_silent: boolean
           read_at: string | null
           sent_by: string | null
           title: Json
@@ -1376,6 +1788,7 @@ export type Database = {
           id?: string
           is_broadcast?: boolean
           is_read?: boolean
+          is_silent?: boolean
           read_at?: string | null
           sent_by?: string | null
           title?: Json
@@ -1389,6 +1802,7 @@ export type Database = {
           id?: string
           is_broadcast?: boolean
           is_read?: boolean
+          is_silent?: boolean
           read_at?: string | null
           sent_by?: string | null
           title?: Json
@@ -2047,30 +2461,51 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          notify_achievements: boolean
+          notify_co_hosting: boolean
+          notify_content_review: boolean
           notify_donations: boolean
           notify_events: boolean
+          notify_followers: boolean
           notify_new_content: boolean
+          notify_reminders: boolean
+          notify_rsvp: boolean
           notify_verse_of_day: boolean
+          notify_wallet: boolean
           theme_preference: Json
           updated_at: string
         }
         Insert: {
           created_at?: string
           id: string
+          notify_achievements?: boolean
+          notify_co_hosting?: boolean
+          notify_content_review?: boolean
           notify_donations?: boolean
           notify_events?: boolean
+          notify_followers?: boolean
           notify_new_content?: boolean
+          notify_reminders?: boolean
+          notify_rsvp?: boolean
           notify_verse_of_day?: boolean
+          notify_wallet?: boolean
           theme_preference?: Json
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          notify_achievements?: boolean
+          notify_co_hosting?: boolean
+          notify_content_review?: boolean
           notify_donations?: boolean
           notify_events?: boolean
+          notify_followers?: boolean
           notify_new_content?: boolean
+          notify_reminders?: boolean
+          notify_rsvp?: boolean
           notify_verse_of_day?: boolean
+          notify_wallet?: boolean
           theme_preference?: Json
           updated_at?: string
         }
@@ -2219,33 +2654,26 @@ export type Database = {
       verse_of_the_day: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           scheduled_date: string
           verse_id: string
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
           scheduled_date: string
           verse_id: string
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
           scheduled_date?: string
           verse_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "verse_of_the_day_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "verse_of_the_day_verse_id_fkey"
             columns: ["verse_id"]
@@ -2352,9 +2780,30 @@ export type Database = {
         Args: { accepting_user_id: string; invitation_token: string }
         Returns: Json
       }
+      change_member_role: {
+        Args: {
+          new_role: string
+          old_role: string
+          requester_id: string
+          target_church_id: string
+          target_user_id: string
+        }
+        Returns: Json
+      }
       check_phone_exists: { Args: { phone_number: string }; Returns: boolean }
       cleanup_old_bot_sessions: { Args: never; Returns: undefined }
       close_completed_events: { Args: never; Returns: undefined }
+      create_notification: {
+        Args: {
+          p_body: Json
+          p_data?: Json
+          p_pref_category?: string
+          p_title: Json
+          p_type: Database["public"]["Enums"]["notification_type"]
+          p_user_id: string
+        }
+        Returns: string
+      }
       decrement_like_count: { Args: { content_id: string }; Returns: undefined }
       expire_old_invitations: { Args: never; Returns: undefined }
       expire_old_stories: { Args: never; Returns: undefined }
@@ -2389,7 +2838,18 @@ export type Database = {
           website: string
         }[]
       }
+      fn_send_event_reminders: { Args: never; Returns: undefined }
+      fn_send_verse_of_the_day: { Args: never; Returns: undefined }
       generate_referral_code: { Args: never; Returns: string }
+      get_church_admin_ids: { Args: { p_church_id: string }; Returns: string[] }
+      get_church_admin_only_ids: {
+        Args: { p_church_id: string }
+        Returns: string[]
+      }
+      get_church_follower_ids: {
+        Args: { p_church_id: string }
+        Returns: string[]
+      }
       get_followed_churches: {
         Args: { check_user_id: string }
         Returns: {
@@ -2448,6 +2908,20 @@ export type Database = {
         Args: { check_user_id: string }
         Returns: number
       }
+      get_verse_of_day: {
+        Args: never
+        Returns: {
+          book_id: string
+          book_name: Json
+          book_number: number
+          chapter_id: string
+          chapter_number: number
+          testament: string
+          verse_id: string
+          verse_number: number
+          verse_text: Json
+        }[]
+      }
       increment_content_view_count: {
         Args: { content_id: string }
         Returns: undefined
@@ -2467,6 +2941,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { user_id: string }; Returns: boolean }
+      lookup_phone_profile: { Args: { phone_number: string }; Returns: Json }
       process_referral: {
         Args: { p_referred_user_id: string; p_referrer_code: string }
         Returns: Json
@@ -2475,18 +2950,40 @@ export type Database = {
         Args: { scheduled_donation_id: string }
         Returns: Json
       }
+      remove_church_member: {
+        Args: {
+          requester_id: string
+          target_church_id: string
+          target_user_id: string
+        }
+        Returns: Json
+      }
       search_bible_books: {
         Args: { search_query: string }
         Returns: {
           book_number: number
+          category: string
           chapter_count: number
+          created_at: string
           id: string
           name: Json
-          testament: Json
+          paratext_code: string
+          testament: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "bible_books"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       search_bible_verses_text: {
-        Args: { search_query: string }
+        Args: {
+          lang?: string
+          lim?: number
+          off_set?: number
+          search_query: string
+        }
         Returns: {
           book_id: string
           book_name: Json
@@ -2494,7 +2991,7 @@ export type Database = {
           chapter_count: number
           chapter_id: string
           chapter_number: number
-          testament: Json
+          testament: string
           text: Json
           verse_count: number
           verse_id: string
@@ -2502,6 +2999,10 @@ export type Database = {
         }[]
       }
       send_sms_hook: { Args: { event: Json }; Returns: Json }
+      should_send_push: {
+        Args: { p_category: string; p_user_id: string }
+        Returns: boolean
+      }
       user_has_church_role: {
         Args: {
           p_church_id: string
@@ -2558,6 +3059,27 @@ export type Database = {
         | "church_announcement"
         | "system_message"
         | "achievement"
+        | "new_event"
+        | "event_cancelled"
+        | "new_rsvp"
+        | "rsvp_confirmed"
+        | "rsvp_updated"
+        | "rsvp_cancelled"
+        | "new_donation"
+        | "donation_milestone"
+        | "donation_goal_reached"
+        | "donation_exceeded"
+        | "campaign_goal_changed"
+        | "new_campaign"
+        | "content_pending"
+        | "co_host_invited"
+        | "co_host_accepted"
+        | "co_host_declined"
+        | "new_follower"
+        | "wallet_deposit"
+        | "wallet_withdrawal"
+        | "event_reminder_24h"
+        | "event_reminder_1h"
       room_participant_role: "host" | "speaker" | "listener"
       room_status: "scheduled" | "live" | "ended" | "cancelled"
       rsvp_status: "going" | "maybe" | "not_going"
@@ -2733,6 +3255,27 @@ export const Constants = {
         "church_announcement",
         "system_message",
         "achievement",
+        "new_event",
+        "event_cancelled",
+        "new_rsvp",
+        "rsvp_confirmed",
+        "rsvp_updated",
+        "rsvp_cancelled",
+        "new_donation",
+        "donation_milestone",
+        "donation_goal_reached",
+        "donation_exceeded",
+        "campaign_goal_changed",
+        "new_campaign",
+        "content_pending",
+        "co_host_invited",
+        "co_host_accepted",
+        "co_host_declined",
+        "new_follower",
+        "wallet_deposit",
+        "wallet_withdrawal",
+        "event_reminder_24h",
+        "event_reminder_1h",
       ],
       room_participant_role: ["host", "speaker", "listener"],
       room_status: ["scheduled", "live", "ended", "cancelled"],

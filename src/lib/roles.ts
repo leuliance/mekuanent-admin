@@ -29,3 +29,11 @@ export function hasAdminAccess(role: UserRole): boolean {
 export function canDelete(role: UserRole): boolean {
   return role === "super_admin";
 }
+
+/**
+ * Ban / unban / change `profiles.status` in admin. `admin` cannot; only `super_admin`.
+ * (Same gate as destructive deletes; kept as a named export for user-management UI.)
+ */
+export function canBanUsers(role: UserRole): boolean {
+  return isSuperAdmin(role);
+}

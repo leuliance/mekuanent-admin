@@ -13,6 +13,7 @@ import { ContentTypeBadge } from "@/components/content/content-type-badge";
 import { useLocaleStore, getLocalizedText } from "@/stores/locale-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -38,8 +39,6 @@ import {
   FileText,
   Video,
   Music,
-  Check,
-  X,
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -327,10 +326,15 @@ function ContentPage() {
     id: string,
     newStatus: ContentStatus
   ) => {
+    const row = content.find(
+      (c: Record<string, unknown>) => c.id === id,
+    ) as { status?: ContentStatus } | undefined;
+    if (row?.status === newStatus) return;
+
     setStatusChanging(id);
     try {
       await updateContentStatus({ data: { id, status: newStatus } });
-      toast.success(`Content ${newStatus === "approved" ? "approved" : newStatus === "rejected" ? "rejected" : "updated"} successfully`);
+      toast.success("Content status updated");
       contentQuery.refetch();
       statsQuery.refetch();
     } catch (error) {
@@ -571,7 +575,36 @@ function ContentPage() {
                           />
                         </div>
 
-                        <div className="flex items-center justify-between pt-2 border-t">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">
+                            Status
+                          </Label>
+                          <Select
+                            value={item.status as string}
+                            disabled={statusChanging === (item.id as string)}
+                            onValueChange={(value) =>
+                              handleStatusChange(
+                                item.id as string,
+                                value as ContentStatus,
+                              )
+                            }
+                          >
+                            <SelectTrigger className="h-9 w-full text-xs">
+                              <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="draft">Draft</SelectItem>
+                              <SelectItem value="pending_approval">
+                                Pending approval
+                              </SelectItem>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                              <SelectItem value="archived">Archived</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t pt-2">
                           <div className="text-xs text-muted-foreground">
                             <span>{creatorName}</span>
                             <span className="mx-1">&middot;</span>
@@ -580,48 +613,6 @@ function ContentPage() {
                                 item.created_at as string
                               ).toLocaleDateString()}
                             </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {item.status === "pending_approval" && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  disabled={
-                                    statusChanging === (item.id as string)
-                                  }
-                                  onClick={() =>
-                                    handleStatusChange(
-                                      item.id as string,
-                                      "approved"
-                                    )
-                                  }
-                                >
-                                  {statusChanging === (item.id as string) ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Check className="h-3 w-3 text-green-600" />
-                                  )}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  disabled={
-                                    statusChanging === (item.id as string)
-                                  }
-                                  onClick={() =>
-                                    handleStatusChange(
-                                      item.id as string,
-                                      "rejected"
-                                    )
-                                  }
-                                >
-                                  <X className="h-3 w-3 text-red-600" />
-                                </Button>
-                              </>
-                            )}
                           </div>
                         </div>
 

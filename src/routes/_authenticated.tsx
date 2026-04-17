@@ -1,8 +1,9 @@
 import { createFileRoute, redirect, Outlet } from "@tanstack/react-router";
+import { useEffect } from "react";
 import type { AdminUser } from "@/routes/__root";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset, useSidebar } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context }) => {
@@ -23,11 +24,30 @@ function AuthenticatedLayout() {
 
   return (
     <SidebarProvider>
+      <AuthenticatedShell user={user} />
+    </SidebarProvider>
+  );
+}
+
+/** Collapse icon rail on tablet / small laptop so the header has room for controls. */
+function AuthenticatedShell({ user }: { user: AdminUser }) {
+  const { setOpen, isMobile } = useSidebar();
+
+  useEffect(() => {
+    if (isMobile) return;
+    const mq = window.matchMedia("(min-width: 768px) and (max-width: 1279px)");
+    if (mq.matches) setOpen(false);
+  }, [isMobile, setOpen]);
+
+  return (
+    <>
       <AppSidebar user={user} />
       <SidebarInset>
         <DashboardHeader />
-        <Outlet />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <Outlet />
+        </div>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }

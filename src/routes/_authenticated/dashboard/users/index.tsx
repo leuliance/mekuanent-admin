@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useDebouncer } from "@tanstack/react-pacer";
 import { getUsers, getUserStats, updateUserStatus, type UserAccountStatus } from "@/api/users";
-import { isSuperAdmin } from "@/lib/roles";
+import { canBanUsers } from "@/lib/roles";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -85,8 +85,8 @@ export const Route = createFileRoute("/_authenticated/dashboard/users/")({
 // ============ LOADING SKELETON ============
 function UsersLoadingSkeleton() {
   return (
-    <>
-      <div className="flex-1 overflow-auto p-6">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 overflow-auto p-4 sm:p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -116,15 +116,15 @@ function UsersLoadingSkeleton() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
 // ============ ERROR STATE ============
 function UsersErrorState({ error }: { error: Error }) {
   return (
-    <>
-      <div className="flex-1 flex items-center justify-center p-6">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 items-center justify-center p-6">
         <div className="text-center max-w-md">
           <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
             <AlertCircle className="w-8 h-8 text-destructive" />
@@ -136,7 +136,7 @@ function UsersErrorState({ error }: { error: Error }) {
           <Button onClick={() => window.location.reload()}>Try Again</Button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -149,7 +149,8 @@ function UsersPage() {
   const [hasSearched, setHasSearched] = useState(false);
 
   const { user: currentUser } = Route.useRouteContext();
-  const isCurrentSuperAdmin = !!currentUser && isSuperAdmin(currentUser.role);
+  const canModerateAccountStatus =
+    !!currentUser && canBanUsers(currentUser.role);
 
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [statusTargetUser, setStatusTargetUser] = useState<Record<string, unknown> | null>(null);
@@ -209,6 +210,10 @@ function UsersPage() {
 
   const handleStatusUpdate = async () => {
     if (!statusTargetUser || !currentUser) return;
+    if (!canBanUsers(currentUser.role)) {
+      toast.error("Only super admins can change user account status.");
+      return;
+    }
     setIsUpdatingStatus(true);
     try {
       await updateUserStatus({
@@ -224,9 +229,9 @@ function UsersPage() {
       setStatusTargetUser(null);
       setStatusReason("");
       usersQuery.refetch();
+      setIsUpdatingStatus(false);
     } catch (error) {
       toast.error(`Failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    } finally {
       setIsUpdatingStatus(false);
     }
   };
@@ -263,9 +268,9 @@ function UsersPage() {
   };
 
   return (
-    <>
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 overflow-auto p-4 sm:p-6">
+        <div className="mx-auto max-w-7xl space-y-6">
           {/* Page Title & Stats */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -327,7 +332,9 @@ function UsersPage() {
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">User</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Contact</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Roles</th>
+                      <th className="min-w-[12rem] px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider sm:min-w-[14rem]">
+                        Roles
+                      </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Joined</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
@@ -374,7 +381,9 @@ function UsersPage() {
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">User</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Contact</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Roles</th>
+                      <th className="min-w-[12rem] px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider sm:min-w-[14rem]">
+                        Roles
+                      </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Joined</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
@@ -420,19 +429,19 @@ function UsersPage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="flex flex-wrap gap-1">
+                        <td className="min-w-[12rem] max-w-[min(100%,20rem)] align-top px-4 py-4 sm:min-w-[14rem]">
+                          <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap">
                             {user.user_roles && user.user_roles.length > 0 ? (
                               user.user_roles.map((ur: { role: UserRole }, idx: number) => (
                                 <span
                                   key={idx}
-                                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${roleColors[ur.role]}`}
+                                  className={`inline-flex w-fit max-w-full shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${roleColors[ur.role]}`}
                                 >
                                   {ur.role.replace("_", " ")}
                                 </span>
                               ))
                             ) : (
-                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${roleColors.user}`}>
+                              <span className={`inline-flex w-fit rounded-full px-2.5 py-0.5 text-xs font-medium ${roleColors.user}`}>
                                 user
                               </span>
                             )}
@@ -463,7 +472,7 @@ function UsersPage() {
                               <Eye className="w-4 h-4 mr-1" />
                               View
                             </Button>
-                            {isCurrentSuperAdmin && !isUserSuperAdmin(user as any) && (
+                            {canModerateAccountStatus && !isUserSuperAdmin(user as any) && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -475,8 +484,22 @@ function UsersPage() {
                                   setStatusDialogOpen(true);
                                 }}
                               >
-                                {userStatus !== "active" ? <ShieldCheck className="w-4 h-4 mr-1" /> : <Ban className="w-4 h-4 mr-1" />}
-                                {userStatus !== "active" ? "Activate" : "Ban"}
+                                {userStatus === "active" ? (
+                                  <>
+                                    <Ban className="w-4 h-4 mr-1" />
+                                    Ban
+                                  </>
+                                ) : userStatus === "banned" ? (
+                                  <>
+                                    <ShieldCheck className="w-4 h-4 mr-1" />
+                                    Unban
+                                  </>
+                                ) : (
+                                  <>
+                                    <ShieldCheck className="w-4 h-4 mr-1" />
+                                    Activate
+                                  </>
+                                )}
                               </Button>
                             )}
                           </div>
@@ -582,6 +605,6 @@ function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

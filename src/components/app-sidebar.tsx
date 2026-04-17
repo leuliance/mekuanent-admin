@@ -24,6 +24,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import type { AdminUser } from "@/routes/__root";
 
@@ -102,13 +103,21 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   const navItems = getNavItems(user.role);
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link to="/dashboard" />}>
+            <SidebarMenuButton
+              size="lg"
+              render={<Link to="/dashboard" onClick={closeMobileSidebar} />}
+            >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-linear-to-br from-cyan-500 to-blue-600 text-white">
                 <Church className="size-4" />
               </div>
@@ -131,6 +140,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
             name: `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Admin",
             email: user.email || "",
             avatar: user.avatar_url || "",
+            role: user.role,
           }}
         />
       </SidebarFooter>
