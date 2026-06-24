@@ -35,7 +35,7 @@ const deleteFeatureFlagSchema = z.object({
 });
 
 export const getFeatureFlags = createServerFn({ method: "GET" })
-	.inputValidator(getFeatureFlagsSchema)
+	.validator(getFeatureFlagsSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -56,7 +56,7 @@ export const getFeatureFlags = createServerFn({ method: "GET" })
 	});
 
 export const updateFeatureFlag = createServerFn({ method: "POST" })
-	.inputValidator(updateFeatureFlagSchema)
+	.validator(updateFeatureFlagSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -71,7 +71,7 @@ export const updateFeatureFlag = createServerFn({ method: "POST" })
 	});
 
 export const createFeatureFlag = createServerFn({ method: "POST" })
-	.inputValidator(createFeatureFlagSchema)
+	.validator(createFeatureFlagSchema)
 	.handler(async ({ data }) => {
 		const { userId } = await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -91,7 +91,7 @@ export const createFeatureFlag = createServerFn({ method: "POST" })
 	});
 
 export const deleteFeatureFlag = createServerFn({ method: "POST" })
-	.inputValidator(deleteFeatureFlagSchema)
+	.validator(deleteFeatureFlagSchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -135,7 +135,7 @@ const updatePaymentGatewaySchema = z.object({
 });
 
 export const updatePaymentGateway = createServerFn({ method: "POST" })
-	.inputValidator(updatePaymentGatewaySchema)
+	.validator(updatePaymentGatewaySchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { id, ...updateData } = data;
@@ -166,7 +166,7 @@ const createPaymentGatewaySchema = z.object({
 });
 
 export const createPaymentGateway = createServerFn({ method: "POST" })
-	.inputValidator(createPaymentGatewaySchema)
+	.validator(createPaymentGatewaySchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -191,7 +191,7 @@ const deletePaymentGatewaySchema = z.object({
 });
 
 export const deletePaymentGateway = createServerFn({ method: "POST" })
-	.inputValidator(deletePaymentGatewaySchema)
+	.validator(deletePaymentGatewaySchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -203,6 +203,51 @@ export const deletePaymentGateway = createServerFn({ method: "POST" })
 
 		if (error) throw new Error(error.message);
 
+		return { success: true };
+	});
+
+// ============ APP SETTINGS (key/value) ============
+
+export const getAppSettings = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const supabase = getSupabaseServerClient();
+		const { data, error } = await supabase
+			.from("app_settings")
+			.select("*")
+			.order("key", { ascending: true });
+		if (error) throw new Error(error.message);
+		return serialize(data || []);
+	},
+);
+
+const upsertAppSettingSchema = z.object({
+	key: z.string().min(1),
+	/** Stored as JSON in `value`. Plain strings (e.g. URLs) are wrapped as JSON. */
+	value: z.union([
+		z.string(),
+		z.number(),
+		z.boolean(),
+		z.record(z.string(), z.unknown()),
+	]),
+	description: z.string().optional(),
+});
+
+export const upsertAppSetting = createServerFn({ method: "POST" })
+	.validator(upsertAppSettingSchema)
+	.handler(async ({ data }) => {
+		const { userId } = await assertSuperAdmin();
+		const supabase = getSupabaseServerClient();
+		const { error } = await supabase.from("app_settings").upsert(
+			{
+				key: data.key,
+				value:
+					data.value as Database["public"]["Tables"]["app_settings"]["Insert"]["value"],
+				description: data.description ?? null,
+				updated_by: userId,
+			},
+			{ onConflict: "key" },
+		);
+		if (error) throw new Error(error.message);
 		return { success: true };
 	});
 

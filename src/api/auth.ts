@@ -1,135 +1,85 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { Database } from "@/types/database.types";
+import { buildAdminUser } from "@/lib/admin-user";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+
+export type { AdminUser } from "@/lib/admin-user";
 
 // Helper to serialize data for server function return
 // biome-ignore lint/suspicious/noExplicitAny: Required for JSON serialization of Supabase types with unknown fields
 const serialize = <T>(data: T): any => JSON.parse(JSON.stringify(data));
 
-// Types
-export type AdminUser = {
-  id: string;
-  email: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  avatar_url: string | null;
-  role: Database["public"]["Enums"]["user_role"];
-  church_id: string | null;
-};
-
 // Schemas
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+	email: z.email(),
+	password: z.string().min(1),
 });
 
 // Login with email and password
 export const loginAdmin = createServerFn({ method: "POST" })
-  .inputValidator(loginSchema)
-  .handler(async ({ data }) => {
-    const supabase = getSupabaseServerClient();
+	.validator(loginSchema)
+	.handler(async ({ data }) => {
+		const supabase = getSupabaseServerClient();
 
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
+		const { data: authData, error: authError } =
+			await supabase.auth.signInWithPassword({
+				email: data.email,
+				password: data.password,
+			});
 
-      if (authError) {
-        throw new Error(authError.message);
-      }
+		if (authError) {
+			throw new Error(authError.message);
+		}
 
-      if (!authData.user) {
-        throw new Error("Login failed");
-      }
+		if (!authData.user) {
+			throw new Error("Login failed");
+		}
 
-      // Check if user has super_admin or admin role
-      const { data: userRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("role, church_id")
-        .eq("user_id", authData.user.id)
-        .in("role", ["super_admin", "admin"]);
+		// Roles + permissions come from the verified JWT claims.
+		const adminUser = await buildAdminUser(supabase);
 
-      if (rolesError) {
-        throw new Error("Failed to verify admin access");
-      }
+		if (!adminUser) {
+			await supabase.auth.signOut();
+			throw new Error(
+				"Access denied. Only administrators can access this portal.",
+			);
+		}
 
-      if (!userRoles || userRoles.length === 0) {
-        await supabase.auth.signOut();
-        throw new Error("Access denied. Only administrators can access this portal.");
-      }
-
-      // Get user profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", authData.user.id)
-        .single();
-
-      return serialize({
-        user: {
-          id: authData.user.id,
-          email: profile?.email || authData.user.email,
-          first_name: profile?.first_name,
-          last_name: profile?.last_name,
-          avatar_url: profile?.avatar_url,
-          role: userRoles[0].role,
-          church_id: userRoles[0].church_id,
-        } as AdminUser,
-        session: authData.session,
-      });
-  });
+		return serialize({
+			user: adminUser,
+			session: authData.session,
+		});
+	});
 
 // Get current session
 export const getSession = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const supabase = getSupabaseServerClient();
+	async () => {
+		const supabase = getSupabaseServerClient();
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+		const {
+			data: { session },
+		} = await supabase.auth.getSession();
 
-      if (!session) {
-        return null;
-      }
+		if (!session) {
+			return null;
+		}
 
-      // Check if user has super_admin or admin role
-      const { data: userRoles } = await supabase
-        .from("user_roles")
-        .select("role, church_id")
-        .eq("user_id", session.user.id)
-        .in("role", ["super_admin", "admin"]);
+		const adminUser = await buildAdminUser(supabase);
 
-      if (!userRoles || userRoles.length === 0) {
-        return null;
-      }
+		if (!adminUser) {
+			return null;
+		}
 
-      // Get user profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
-
-      return serialize({
-        user: {
-          id: session.user.id,
-          email: profile?.email || session.user.email,
-          first_name: profile?.first_name,
-          last_name: profile?.last_name,
-          avatar_url: profile?.avatar_url,
-          role: userRoles[0].role,
-          church_id: userRoles[0].church_id,
-        } as AdminUser,
-        session,
-      });
-  }
+		return serialize({
+			user: adminUser,
+			session,
+		});
+	},
 );
 
 // Logout
 export const logout = createServerFn({ method: "POST" }).handler(async () => {
-  const supabase = getSupabaseServerClient();
-  await supabase.auth.signOut();
-  return { success: true };
+	const supabase = getSupabaseServerClient();
+	await supabase.auth.signOut();
+	return { success: true };
 });

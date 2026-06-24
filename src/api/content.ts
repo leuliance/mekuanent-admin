@@ -11,7 +11,7 @@ const serialize = <T>(data: T): any => JSON.parse(JSON.stringify(data));
 
 // Get all content with pagination and filters
 export const getContentItems = createServerFn({ method: "GET" })
-	.inputValidator(
+	.validator(
 		(data: {
 			page?: number;
 			limit?: number;
@@ -53,10 +53,7 @@ export const getContentItems = createServerFn({ method: "GET" })
 		}
 
 		if (data.search) {
-			// Use ->> to extract JSONB fields as text for ILIKE search
-			query = query.or(
-				`title->>en.ilike.%${data.search}%,title->>am.ilike.%${data.search}%`,
-			);
+			query = query.ilike("title", `%${data.search}%`);
 		}
 
 		const { data: content, error, count } = await query;
@@ -76,7 +73,7 @@ export const getContentItems = createServerFn({ method: "GET" })
 
 // Get single content item with type-specific data
 export const getContentItem = createServerFn({ method: "GET" })
-	.inputValidator((data: { id: string }) => data)
+	.validator((data: { id: string }) => data)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -107,7 +104,7 @@ export const getContentItem = createServerFn({ method: "GET" })
 
 // Approve content
 export const approveContent = createServerFn({ method: "POST" })
-	.inputValidator((data: { id: string; approved_by: string }) => data)
+	.validator((data: { id: string; approved_by: string }) => data)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -130,7 +127,7 @@ export const approveContent = createServerFn({ method: "POST" })
 
 // Reject content
 export const rejectContent = createServerFn({ method: "POST" })
-	.inputValidator((data: { id: string; rejected_reason: string }) => data)
+	.validator((data: { id: string; rejected_reason: string }) => data)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -151,12 +148,11 @@ export const rejectContent = createServerFn({ method: "POST" })
 
 // Create content item
 export const createContentItem = createServerFn({ method: "POST" })
-	.inputValidator(
+	.validator(
 		(data: {
-			title_en: string;
-			title_am: string;
-			description_en?: string;
-			description_am?: string;
+			title: string;
+			description?: string;
+			language?: string;
 			content_type: Database["public"]["Enums"]["content_type"];
 			church_id: string;
 			created_by: string;
@@ -170,11 +166,9 @@ export const createContentItem = createServerFn({ method: "POST" })
 		const { data: content, error } = await supabase
 			.from("content_items")
 			.insert({
-				title: { en: data.title_en, am: data.title_am },
-				description: {
-					en: data.description_en || "",
-					am: data.description_am || "",
-				},
+				title: data.title,
+				description: data.description || "",
+				language: data.language || "en",
 				content_type: data.content_type,
 				church_id: data.church_id,
 				created_by: data.created_by,
@@ -193,7 +187,7 @@ export const createContentItem = createServerFn({ method: "POST" })
 
 // Delete content item
 export const deleteContentItem = createServerFn({ method: "POST" })
-	.inputValidator((data: { id: string }) => data)
+	.validator((data: { id: string }) => data)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -212,7 +206,7 @@ export const deleteContentItem = createServerFn({ method: "POST" })
 
 // Update content status
 export const updateContentStatus = createServerFn({ method: "POST" })
-	.inputValidator(
+	.validator(
 		(data: {
 			id: string;
 			status: Database["public"]["Enums"]["content_status"];
@@ -255,12 +249,16 @@ export const getContentStats = createServerFn({ method: "GET" }).handler(
 		]);
 
 		// Count by type
-		const typeCounts = {
+		const typeCounts: Record<
+			Database["public"]["Enums"]["content_type"],
+			number
+		> = {
 			audio: 0,
 			video: 0,
 			article: 0,
 			story: 0,
 			room: 0,
+			short: 0,
 		};
 
 		byType.data?.forEach((item) => {

@@ -43,7 +43,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isSuperAdmin } from "@/lib/roles";
+import { ALL_ROLES, isSuperAdmin, ROLE_COLORS, ROLE_LABELS } from "@/lib/roles";
 
 export const Route = createFileRoute(
 	"/_authenticated/dashboard/users/$userId/",
@@ -60,76 +60,60 @@ export const Route = createFileRoute(
 // ============ LOADING SKELETON ============
 function UserDetailSkeleton() {
 	return (
-		<>
-			<div className="flex-1 overflow-auto p-6">
-				<div className="max-w-4xl mx-auto space-y-6">
-					<Skeleton className="h-8 w-24" />
-					<div className="flex items-center gap-6">
-						<Skeleton className="h-20 w-20 rounded-full" />
-						<div className="space-y-2">
-							<Skeleton className="h-7 w-48" />
-							<Skeleton className="h-4 w-64" />
-						</div>
-					</div>
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						{Array.from({ length: 4 }).map((_, i) => (
-							<Skeleton key={i} className="h-24 rounded-lg" />
-						))}
+		<div className="flex-1 overflow-auto p-6">
+			<div className="max-w-4xl mx-auto space-y-6">
+				<Skeleton className="h-8 w-24" />
+				<div className="flex items-center gap-6">
+					<Skeleton className="h-20 w-20 rounded-full" />
+					<div className="space-y-2">
+						<Skeleton className="h-7 w-48" />
+						<Skeleton className="h-4 w-64" />
 					</div>
 				</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<Skeleton key={i} className="h-24 rounded-lg" />
+					))}
+				</div>
 			</div>
-		</>
+		</div>
 	);
 }
 
 // ============ ERROR STATE ============
 function UserDetailError({ error }: { error: Error }) {
 	return (
-		<>
-			<div className="flex-1 flex items-center justify-center p-6">
-				<div className="text-center max-w-md">
-					<div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-						<AlertCircle className="w-8 h-8 text-destructive" />
-					</div>
-					<h2 className="text-xl font-semibold mb-2">Failed to Load User</h2>
-					<p className="text-muted-foreground mb-4">
-						{error.message || "An unexpected error occurred."}
-					</p>
-					<div className="flex gap-2 justify-center">
-						<Button
-							variant="outline"
-							render={
-								<Link
-									to="/dashboard/users"
-									search={{ page: 1, search: undefined }}
-								/>
-							}
-							nativeButton={false}
-						>
-							<ArrowLeft className="w-4 h-4 mr-2" />
-							Back to Users
-						</Button>
-						<Button onClick={() => window.location.reload()}>Try Again</Button>
-					</div>
+		<div className="flex-1 flex items-center justify-center p-6">
+			<div className="text-center max-w-md">
+				<div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+					<AlertCircle className="w-8 h-8 text-destructive" />
+				</div>
+				<h2 className="text-xl font-semibold mb-2">Failed to Load User</h2>
+				<p className="text-muted-foreground mb-4">
+					{error.message || "An unexpected error occurred."}
+				</p>
+				<div className="flex gap-2 justify-center">
+					<Button
+						variant="outline"
+						render={
+							<Link
+								to="/dashboard/users"
+								search={{ page: 1, search: undefined }}
+							/>
+						}
+						nativeButton={false}
+					>
+						<ArrowLeft className="w-4 h-4 mr-2" />
+						Back to Users
+					</Button>
+					<Button onClick={() => window.location.reload()}>Try Again</Button>
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }
 
 // ============ HELPERS ============
-const roleColors: Record<string, string> = {
-	super_admin: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-	admin: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-	church_admin:
-		"bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-	content_admin:
-		"bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-	content_creator:
-		"bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-	user: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400",
-};
-
 function InfoRow({
 	icon: Icon,
 	label,
@@ -423,9 +407,7 @@ function UserDetailPage() {
 						{/* Bio */}
 						{typedUser.bio && (
 							<div className="rounded-2xl border border-border/80 bg-card shadow-sm p-6 md:col-span-2">
-								<h2 className="font-semibold text-foreground mb-4">
-									Bio
-								</h2>
+								<h2 className="font-semibold text-foreground mb-4">Bio</h2>
 								<p className="text-muted-foreground leading-relaxed">
 									{typedUser.bio}
 								</p>
@@ -435,9 +417,7 @@ function UserDetailPage() {
 						{/* Roles */}
 						<div className="rounded-2xl border border-border/80 bg-card shadow-sm p-6">
 							<div className="flex items-center justify-between mb-4">
-								<h2 className="font-semibold text-foreground">
-									Roles
-								</h2>
+								<h2 className="font-semibold text-foreground">Roles</h2>
 								{showRoleManagement && (
 									<Button
 										variant="outline"
@@ -460,11 +440,13 @@ function UserDetailPage() {
 												<Shield className="w-4 h-4 text-slate-400" />
 												<div>
 													<span
-														className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${
-															roleColors[role.role] || roleColors.user
+														className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+															ROLE_COLORS[role.role as UserRole["role"]] ??
+															ROLE_COLORS.viewer
 														}`}
 													>
-														{role.role.replace("_", " ")}
+														{ROLE_LABELS[role.role as UserRole["role"]] ??
+															role.role}
 													</span>
 													{role.churches && (
 														<p className="text-xs text-muted-foreground mt-1">
@@ -593,7 +575,7 @@ function UserDetailPage() {
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-2">
-						<label className="text-sm font-medium">Role</label>
+						<span className="text-sm font-medium">Role</span>
 						<Select
 							value={newRole}
 							onValueChange={(value) => setNewRole(value || "")}
@@ -602,11 +584,11 @@ function UserDetailPage() {
 								<SelectValue placeholder="Select a role" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="super_admin">Super Admin</SelectItem>
-								<SelectItem value="church_admin">Church Admin</SelectItem>
-								<SelectItem value="content_admin">Content Admin</SelectItem>
-								<SelectItem value="content_creator">Content Creator</SelectItem>
-								<SelectItem value="user">User</SelectItem>
+								{ALL_ROLES.map((role) => (
+									<SelectItem key={role} value={role}>
+										{ROLE_LABELS[role]}
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 					</div>

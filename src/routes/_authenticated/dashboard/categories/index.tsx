@@ -121,10 +121,8 @@ function CategoriesPage() {
 	);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const [nameEn, setNameEn] = useState("");
-	const [nameAm, setNameAm] = useState("");
-	const [descEn, setDescEn] = useState("");
-	const [descAm, setDescAm] = useState("");
+	const [name, setName] = useState("");
+	const [description, setDescription] = useState("");
 	const [icon, setIcon] = useState("");
 	const [color, setColor] = useState("#6366f1");
 
@@ -161,36 +159,30 @@ function CategoriesPage() {
 	) => {
 		setCategoryType(type);
 		setEditingCategory(cat);
-		const name = cat.name as Record<string, string> | null;
-		const desc = cat.description as Record<string, string> | null;
-		setNameEn(name?.en || "");
-		setNameAm(name?.am || "");
-		setDescEn(desc?.en || "");
-		setDescAm(desc?.am || "");
+		setName(safeLocalizedText(cat.name, locale));
+		setDescription(safeLocalizedText(cat.description, locale));
 		setIcon((cat.icon as string) || "");
 		setColor((cat.color as string) || "#6366f1");
 		setDialogOpen(true);
 	};
 
 	const resetForm = () => {
-		setNameEn("");
-		setNameAm("");
-		setDescEn("");
-		setDescAm("");
+		setName("");
+		setDescription("");
 		setIcon("");
 		setColor("#6366f1");
 	};
 
 	const handleSubmit = async () => {
-		if (!nameEn.trim()) {
-			toast.error("English name is required");
+		if (!name.trim()) {
+			toast.error("Name is required");
 			return;
 		}
 		setIsSubmitting(true);
 		try {
 			const payload = {
-				name: { en: nameEn.trim(), am: nameAm.trim() || nameEn.trim() },
-				description: { en: descEn.trim(), am: descAm.trim() || descEn.trim() },
+				name: name.trim(),
+				description: description.trim(),
 				icon: icon.trim() || null,
 				color: color || null,
 			};
@@ -394,8 +386,10 @@ function CategoriesPage() {
 										{(() => {
 											const raw = (cat.icon as string)?.trim();
 											if (raw && [...raw].length > 0) return [...raw][0];
-											const letter =
-												safeLocalizedText(cat.name, locale)?.[0]?.toUpperCase();
+											const letter = safeLocalizedText(
+												cat.name,
+												locale,
+											)?.[0]?.toUpperCase();
 											return letter || "?";
 										})()}
 									</span>
@@ -535,7 +529,7 @@ function CategoriesPage() {
 							) : (
 								<div className="rounded-xl border bg-card overflow-hidden">
 									<div className="divide-y">
-										{typedRegionCats.map((r: any) => (
+										{typedRegionCats.map((r) => (
 											<div
 												key={r.id}
 												className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
@@ -619,41 +613,21 @@ function CategoriesPage() {
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4">
-						<div className="grid grid-cols-2 gap-3">
-							<div className="space-y-1.5">
-								<Label className="text-xs">Name (English) *</Label>
-								<Input
-									value={nameEn}
-									onChange={(e) => setNameEn(e.target.value)}
-									placeholder="English name"
-								/>
-							</div>
-							<div className="space-y-1.5">
-								<Label className="text-xs">Name (Amharic)</Label>
-								<Input
-									value={nameAm}
-									onChange={(e) => setNameAm(e.target.value)}
-									placeholder="የአማርኛ ስም"
-								/>
-							</div>
+						<div className="space-y-1.5">
+							<Label className="text-xs">Name *</Label>
+							<Input
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								placeholder="Category name"
+							/>
 						</div>
-						<div className="grid grid-cols-2 gap-3">
-							<div className="space-y-1.5">
-								<Label className="text-xs">Description (English)</Label>
-								<Input
-									value={descEn}
-									onChange={(e) => setDescEn(e.target.value)}
-									placeholder="Brief description"
-								/>
-							</div>
-							<div className="space-y-1.5">
-								<Label className="text-xs">Description (Amharic)</Label>
-								<Input
-									value={descAm}
-									onChange={(e) => setDescAm(e.target.value)}
-									placeholder="አጭር መግለጫ"
-								/>
-							</div>
+						<div className="space-y-1.5">
+							<Label className="text-xs">Description</Label>
+							<Input
+								value={description}
+								onChange={(e) => setDescription(e.target.value)}
+								placeholder="Brief description"
+							/>
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div className="space-y-1.5">
@@ -692,7 +666,7 @@ function CategoriesPage() {
 						</Button>
 						<Button
 							onClick={handleSubmit}
-							disabled={isSubmitting || !nameEn.trim()}
+							disabled={isSubmitting || !name.trim()}
 						>
 							{isSubmitting ? (
 								<>

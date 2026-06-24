@@ -21,6 +21,7 @@ import {
 	Pencil,
 	Plus,
 	Save,
+	Smartphone,
 	Trash2,
 	User,
 	Users,
@@ -34,10 +35,12 @@ import {
 	deleteFeatureFlag,
 	deletePaymentGateway,
 	getAppOverviewStats,
+	getAppSettings,
 	getFeatureFlags,
 	getPaymentGateways,
 	updateFeatureFlag,
 	updatePaymentGateway,
+	upsertAppSetting,
 } from "@/api/settings";
 import { ResponsiveTabs } from "@/components/responsive-tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -73,13 +76,14 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings/")({
 		tab: (search.tab as string) || "profile",
 	}),
 	loader: async () => {
-		const [flags, gateways, stats, profile] = await Promise.all([
+		const [flags, gateways, stats, profile, appSettings] = await Promise.all([
 			getFeatureFlags({ data: {} }),
 			getPaymentGateways(),
 			getAppOverviewStats(),
 			getProfile(),
+			getAppSettings(),
 		]);
-		return { flags, gateways, stats, profile };
+		return { flags, gateways, stats, profile, appSettings };
 	},
 	pendingComponent: SettingsLoadingSkeleton,
 	errorComponent: SettingsErrorState,
@@ -89,45 +93,40 @@ export const Route = createFileRoute("/_authenticated/dashboard/settings/")({
 // ============ LOADING SKELETON ============
 function SettingsLoadingSkeleton() {
 	return (
-		<>
-			<div className="flex-1 overflow-auto p-6">
-				<div className="max-w-5xl mx-auto space-y-6">
-					<Skeleton className="h-8 w-32" />
-					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-						{Array.from({ length: 5 }).map((_, i) => (
-							<Skeleton key={i} className="h-24 rounded-xl" />
-						))}
-					</div>
-					<Skeleton className="h-96 rounded-xl" />
+		<div className="flex-1 overflow-auto p-6">
+			<div className="max-w-5xl mx-auto space-y-6">
+				<Skeleton className="h-8 w-32" />
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<Skeleton key={i} className="h-24 rounded-xl" />
+					))}
 				</div>
+				<Skeleton className="h-96 rounded-xl" />
 			</div>
-		</>
+		</div>
 	);
 }
 
 // ============ ERROR STATE ============
 function SettingsErrorState({ error }: { error: Error }) {
 	return (
-		<>
-			<div className="flex-1 flex items-center justify-center p-6">
-				<div className="text-center max-w-md">
-					<div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-						<AlertCircle className="w-8 h-8 text-destructive" />
-					</div>
-					<h2 className="text-xl font-semibold mb-2">
-						Failed to Load Settings
-					</h2>
-					<p className="text-muted-foreground mb-4">{error.message}</p>
-					<Button onClick={() => window.location.reload()}>Try Again</Button>
+		<div className="flex-1 flex items-center justify-center p-6">
+			<div className="text-center max-w-md">
+				<div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+					<AlertCircle className="w-8 h-8 text-destructive" />
 				</div>
+				<h2 className="text-xl font-semibold mb-2">Failed to Load Settings</h2>
+				<p className="text-muted-foreground mb-4">{error.message}</p>
+				<Button onClick={() => window.location.reload()}>Try Again</Button>
 			</div>
-		</>
+		</div>
 	);
 }
 
 // ============ MAIN PAGE ============
 function SettingsPage() {
-	const { flags, gateways, stats, profile } = Route.useLoaderData();
+	const { flags, gateways, stats, profile, appSettings } =
+		Route.useLoaderData();
 	const searchParams = Route.useSearch();
 	const { locale } = useLocaleStore();
 	const router = useRouter();
@@ -195,6 +194,69 @@ function SettingsPage() {
 	const [isDeletingGateway, setIsDeletingGateway] = useState(false);
 
 	const isSuperAdminUser = user?.role === "super_admin";
+
+	// ---- App settings (store links) state ----
+	// biome-ignore lint/suspicious/noExplicitAny: app_settings rows are dynamic JSON.
+	const settingsList = (appSettings as any[]) ?? [];
+	const settingValue = (key: string): string => {
+		const row = settingsList.find((s) => s.key === key);
+		if (!row || row.value == null) return "";
+		return typeof row.value === "string" ? row.value : String(row.value);
+	};
+	const [playStoreUrl, setPlayStoreUrl] = useState(
+		settingValue("play_store_url"),
+	);
+	const [appStoreUrl, setAppStoreUrl] = useState(settingValue("app_store_url"));
+	const [appVersion, setAppVersion] = useState(settingValue("app_version"));
+	const [isSavingStoreUrls, setIsSavingStoreUrls] = useState(false);
+
+	const handleSaveStoreUrls = async () => {
+		const urlRe = /^https?:\/\/.+/i;
+		if (playStoreUrl && !urlRe.test(playStoreUrl)) {
+			toast.error("Play Store URL must start with http(s)://");
+			return;
+		}
+		if (appStoreUrl && !urlRe.test(appStoreUrl)) {
+			toast.error("App Store URL must start with http(s)://");
+			return;
+		}
+		if (appVersion && !/^\d+\.\d+(\.\d+)?$/.test(appVersion.trim())) {
+			toast.error("App version must look like 1.2 or 1.2.3");
+			return;
+		}
+		setIsSavingStoreUrls(true);
+		try {
+			await Promise.all([
+				upsertAppSetting({
+					data: {
+						key: "play_store_url",
+						value: playStoreUrl,
+						description: "Google Play listing URL",
+					},
+				}),
+				upsertAppSetting({
+					data: {
+						key: "app_store_url",
+						value: appStoreUrl,
+						description: "Apple App Store listing URL",
+					},
+				}),
+				upsertAppSetting({
+					data: {
+						key: "app_version",
+						value: appVersion.trim(),
+						description: "Current published app version",
+					},
+				}),
+			]);
+			toast.success("App settings saved");
+			router.invalidate();
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "Failed to save");
+		} finally {
+			setIsSavingStoreUrls(false);
+		}
+	};
 
 	// ---- Feature Flag handlers ----
 	const handleToggleFlag = async (id: string, currentValue: boolean) => {
@@ -491,6 +553,16 @@ function SettingsPage() {
 									</>
 								),
 							},
+							{
+								value: "app-settings",
+								label: "App Settings",
+								trigger: (
+									<>
+										<Smartphone className="h-4 w-4 mr-1.5" />
+										App Settings
+									</>
+								),
+							},
 						]}
 						listClassName="flex w-full flex-wrap gap-1"
 					>
@@ -733,7 +805,7 @@ function SettingsPage() {
 							) : (
 								<div className="rounded-xl border bg-card overflow-hidden">
 									<div className="divide-y">
-										{typedFlags.map((flag: any) => (
+										{typedFlags.map((flag) => (
 											<div
 												key={flag.id}
 												className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
@@ -818,7 +890,7 @@ function SettingsPage() {
 								</div>
 							) : (
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									{typedGateways.map((gw: any) => (
+									{typedGateways.map((gw) => (
 										<div
 											key={gw.id}
 											className="rounded-xl border bg-card p-5 space-y-4"
@@ -925,7 +997,7 @@ function SettingsPage() {
 																gw.is_active,
 															)
 														}
-														disabled={togglingId === gw.id + "is_active"}
+														disabled={togglingId === `${gw.id}is_active`}
 													/>
 												</div>
 												<div className="flex items-center gap-2">
@@ -945,7 +1017,7 @@ function SettingsPage() {
 																gw.test_mode,
 															)
 														}
-														disabled={togglingId === gw.id + "test_mode"}
+														disabled={togglingId === `${gw.id}test_mode`}
 													/>
 												</div>
 											</div>
@@ -953,6 +1025,80 @@ function SettingsPage() {
 									))}
 								</div>
 							)}
+						</TabsContent>
+
+						{/* ============ APP SETTINGS TAB ============ */}
+						<TabsContent value="app-settings" className="mt-4 space-y-4">
+							<div className="rounded-xl border bg-card p-6 space-y-6">
+								<div className="flex items-start gap-3">
+									<div className="rounded-lg bg-primary/10 p-2">
+										<Smartphone className="h-5 w-5 text-primary" />
+									</div>
+									<div>
+										<h3 className="font-semibold">Mobile app settings</h3>
+										<p className="text-sm text-muted-foreground">
+											Version and store links used by the mobile app for share
+											sheets and update prompts. Saving is restricted to super
+											admins.
+										</p>
+									</div>
+								</div>
+
+								<div className="space-y-4 max-w-xl">
+									<div className="space-y-1.5">
+										<Label className="text-xs">App Version</Label>
+										<Input
+											value={appVersion}
+											onChange={(e) => setAppVersion(e.target.value)}
+											placeholder="e.g. 1.4.0"
+											disabled={!isSuperAdminUser}
+										/>
+										<p className="text-[11px] text-muted-foreground">
+											The current published version (semver, e.g. 1.4.0).
+										</p>
+									</div>
+									<div className="space-y-1.5">
+										<Label className="text-xs">Google Play URL</Label>
+										<Input
+											value={playStoreUrl}
+											onChange={(e) => setPlayStoreUrl(e.target.value)}
+											placeholder="https://play.google.com/store/apps/details?id=..."
+											disabled={!isSuperAdminUser}
+										/>
+									</div>
+									<div className="space-y-1.5">
+										<Label className="text-xs">Apple App Store URL</Label>
+										<Input
+											value={appStoreUrl}
+											onChange={(e) => setAppStoreUrl(e.target.value)}
+											placeholder="https://apps.apple.com/app/id..."
+											disabled={!isSuperAdminUser}
+										/>
+									</div>
+									{!isSuperAdminUser && (
+										<p className="text-xs text-muted-foreground flex items-center gap-1.5">
+											<Lock className="h-3.5 w-3.5" />
+											Only super admins can edit these values.
+										</p>
+									)}
+									<Button
+										onClick={handleSaveStoreUrls}
+										disabled={isSavingStoreUrls || !isSuperAdminUser}
+									>
+										{isSavingStoreUrls ? (
+											<>
+												<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+												Saving...
+											</>
+										) : (
+											<>
+												<Save className="h-4 w-4 mr-2" />
+												Save app settings
+											</>
+										)}
+									</Button>
+								</div>
+							</div>
 						</TabsContent>
 					</ResponsiveTabs>
 				</div>
@@ -1107,7 +1253,7 @@ function SettingsPage() {
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
 							<CreditCard className="h-5 w-5" />
-							Edit {(editingGateway as any)?.name || "Gateway"}
+							Edit {(editingGateway?.name as string) || "Gateway"}
 						</DialogTitle>
 						<DialogDescription>
 							Update API credentials for this payment gateway.

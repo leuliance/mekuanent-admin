@@ -6,15 +6,28 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------- */
+/* DM Sans (variable) served from the Fontsource CDN                 */
+/* ---------------------------------------------------------------- */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 1000;
+  src: url(https://cdn.jsdelivr.net/fontsource/fonts/dm-sans:vf@latest/latin-wght-normal.woff2)
+    format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 html {
   min-height: 100dvh;
 }
 
 body {
   @apply m-0 min-h-dvh bg-background;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
-    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -24,84 +37,167 @@ code {
     source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-:root {
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.541 0.281 293.009);
-  --primary-foreground: oklch(0.969 0.016 293.756);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.702 0.183 293.541);
-  --chart-1: oklch(0.811 0.111 293.571);
-  --chart-2: oklch(0.606 0.25 292.717);
-  --chart-3: oklch(0.541 0.281 293.009);
-  --chart-4: oklch(0.491 0.27 292.581);
-  --chart-5: oklch(0.432 0.232 292.759);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.541 0.281 293.009);
-  --sidebar-primary-foreground: oklch(0.969 0.016 293.756);
-  --sidebar-accent: oklch(0.94 0.03 293);
-  --sidebar-accent-foreground: oklch(0.37 0.15 293);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.702 0.183 293.541);
-  --brand:
-    oklch(0.623 0.214 259.815);
-  --highlight:
-    oklch(0.852 0.199 91.936);
+/* ---------------------------------------------------------------- */
+/* Elevation utilities (shared with the mobile brand guideline)      */
+/* ---------------------------------------------------------------- */
+
+@utility card-shadow {
+  box-shadow:
+    0 4px 6px -1px rgba(26, 61, 124, 0.08),
+    0 2px 4px -1px rgba(26, 61, 124, 0.04);
 }
 
+@utility card-shadow-lg {
+  box-shadow:
+    0 10px 15px -3px rgba(26, 61, 124, 0.1),
+    0 4px 6px -2px rgba(26, 61, 124, 0.05);
+}
+
+@utility card-shadow-xl {
+  box-shadow:
+    0 20px 25px -5px rgba(26, 61, 124, 0.12),
+    0 10px 10px -5px rgba(26, 61, 124, 0.06);
+}
+
+@utility soft-shadow {
+  box-shadow: 0 4px 12px 0 rgba(26, 61, 124, 0.08);
+}
+
+@utility shadow-e1 {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+@utility shadow-e2 {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+@utility shadow-e3 {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+@utility shadow-e4 {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22);
+}
+
+@utility shadow-e5 {
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ---------------------------------------------------------------- */
+/* Brand palette (light)                                             */
+/* ---------------------------------------------------------------- */
+
+:root {
+  --radius: 0.65rem;
+
+  --background: #ffffff;
+  --foreground: #1a3d7c;
+  --card: #ffffff;
+  --card-foreground: #1a3d7c;
+  --popover: #ffffff;
+  --popover-foreground: #1a3d7c;
+  --primary: #1a3d7c;
+  --primary-foreground: #ffffff;
+  --secondary: #8eaed6;
+  --secondary-foreground: #1a3d7c;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #e0e7ff;
+  --accent-foreground: #1a3d7c;
+  --destructive: #dc2626;
+  --destructive-foreground: #f8fafc;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #1a3d7c;
+
+  --chart-1: #1a3d7c;
+  --chart-2: #8eaed6;
+  --chart-3: #3b82f6;
+  --chart-4: #334155;
+  --chart-5: #60a5fa;
+
+  --sidebar: #f1f5f9;
+  --sidebar-foreground: #1a3d7c;
+  --sidebar-primary: #1a3d7c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e0e7ff;
+  --sidebar-accent-foreground: #1a3d7c;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #1a3d7c;
+
+  /* Brand accent + status tokens */
+  --brand: #1a3d7c;
+  --brand-light: #e0e7ff;
+  --brand-soft: #f1f5f9;
+  --highlight: #f76f00;
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #1a2e22;
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
+  --gold: #f76f00;
+  --inactive: #94a3b8;
+}
+
+/* ---------------------------------------------------------------- */
+/* Brand palette (dark) — matches mobile login-prompt surfaces       */
+/* ---------------------------------------------------------------- */
+
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.606 0.25 292.717);
-  --primary-foreground: oklch(0.969 0.016 293.756);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.38 0.189 293.745);
-  --chart-1: oklch(0.811 0.111 293.571);
-  --chart-2: oklch(0.606 0.25 292.717);
-  --chart-3: oklch(0.541 0.281 293.009);
-  --chart-4: oklch(0.491 0.27 292.581);
-  --chart-5: oklch(0.432 0.232 292.759);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.606 0.25 292.717);
-  --sidebar-primary-foreground: oklch(0.969 0.016 293.756);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.38 0.189 293.745);
-  --brand:
-    oklch(0.707 0.165 254.624);
-  --highlight:
-    oklch(0.852 0.199 91.936);
+  --background: #07111f;
+  --foreground: #f4f4f5;
+  --card: #16161f;
+  --card-foreground: #f4f4f5;
+  --popover: #16161f;
+  --popover-foreground: #f4f4f5;
+  --primary: #8eaed6;
+  --primary-foreground: #0f0f14;
+  --secondary: #1a3d7c;
+  --secondary-foreground: #f4f4f5;
+  --muted: #1e1e2e;
+  --muted-foreground: #9ca3af;
+  --accent: #1a1a2e;
+  --accent-foreground: #f4f4f5;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #f8fafc;
+  --border: #2a2a3a;
+  --input: #2a2a3a;
+  --ring: #8eaed6;
+
+  --chart-1: #8eaed6;
+  --chart-2: #1a3d7c;
+  --chart-3: #3b82f6;
+  --chart-4: #60a5fa;
+  --chart-5: #93c5fd;
+
+  --sidebar: #16161f;
+  --sidebar-foreground: #f4f4f5;
+  --sidebar-primary: #8eaed6;
+  --sidebar-primary-foreground: #0f0f14;
+  --sidebar-accent: #1a1a2e;
+  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-border: #2a2a3a;
+  --sidebar-ring: #8eaed6;
+
+  --brand: #8eaed6;
+  --brand-light: #1a3d7c;
+  --brand-soft: #1e1e2e;
+  --highlight: #f76f00;
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #1a2e22;
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
+  --gold: #f76f00;
+  --inactive: #94a3b8;
 }
 
 @theme inline {
+  --font-sans:
+    'DM Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -138,10 +234,18 @@ code {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --color-brand:
-    var(--brand);
-  --color-highlight:
-    var(--highlight);
+  --color-brand: var(--brand);
+  --color-brand-light: var(--brand-light);
+  --color-brand-soft: var(--brand-soft);
+  --color-highlight: var(--highlight);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-gold: var(--gold);
+  --color-inactive: var(--inactive);
 }
 
 @layer base {

@@ -21,10 +21,10 @@ const getUsersSchema = z.object({
 		.enum([
 			"super_admin",
 			"admin",
-			"church_admin",
-			"content_admin",
-			"content_creator",
-			"user",
+			"manager",
+			"editor",
+			"contributor",
+			"viewer",
 		])
 		.optional(),
 });
@@ -38,10 +38,10 @@ const assignUserRoleSchema = z.object({
 	role: z.enum([
 		"super_admin",
 		"admin",
-		"church_admin",
-		"content_admin",
-		"content_creator",
-		"user",
+		"manager",
+		"editor",
+		"contributor",
+		"viewer",
 	]),
 	church_id: z.string().optional(),
 	assigned_by: z.string().optional(),
@@ -53,7 +53,7 @@ const removeUserRoleSchema = z.object({
 
 // Get all users with pagination
 export const getUsers = createServerFn({ method: "GET" })
-	.inputValidator(getUsersSchema)
+	.validator(getUsersSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const page = data.page || 1;
@@ -103,7 +103,7 @@ export const getUsers = createServerFn({ method: "GET" })
 
 // Get single user by ID
 export const getUser = createServerFn({ method: "GET" })
-	.inputValidator(getUserSchema)
+	.validator(getUserSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -130,7 +130,7 @@ export const getUser = createServerFn({ method: "GET" })
 
 // Assign role to user
 export const assignUserRole = createServerFn({ method: "POST" })
-	.inputValidator(assignUserRoleSchema)
+	.validator(assignUserRoleSchema)
 	.handler(async ({ data }) => {
 		const { userId } = await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -155,7 +155,7 @@ export const assignUserRole = createServerFn({ method: "POST" })
 
 // Remove user role
 export const removeUserRole = createServerFn({ method: "POST" })
-	.inputValidator(removeUserRoleSchema)
+	.validator(removeUserRoleSchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -187,7 +187,7 @@ const updateUserStatusSchema = z.object({
 
 // Update user status (directly on profiles.status)
 export const updateUserStatus = createServerFn({ method: "POST" })
-	.inputValidator(updateUserStatusSchema)
+	.validator(updateUserStatusSchema)
 	.handler(async ({ data }) => {
 		const { userId } = await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -236,29 +236,27 @@ export const getUserStats = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const supabase = getSupabaseServerClient();
 
-		const [total, superAdmins, churchAdmins, contentAdmins] = await Promise.all(
-			[
-				supabase.from("profiles").select("*", { count: "exact", head: true }),
-				supabase
-					.from("user_roles")
-					.select("*", { count: "exact", head: true })
-					.eq("role", "super_admin"),
-				supabase
-					.from("user_roles")
-					.select("*", { count: "exact", head: true })
-					.eq("role", "church_admin"),
-				supabase
-					.from("user_roles")
-					.select("*", { count: "exact", head: true })
-					.eq("role", "content_admin"),
-			],
-		);
+		const [total, superAdmins, admins, managers] = await Promise.all([
+			supabase.from("profiles").select("*", { count: "exact", head: true }),
+			supabase
+				.from("user_roles")
+				.select("*", { count: "exact", head: true })
+				.eq("role", "super_admin"),
+			supabase
+				.from("user_roles")
+				.select("*", { count: "exact", head: true })
+				.eq("role", "admin"),
+			supabase
+				.from("user_roles")
+				.select("*", { count: "exact", head: true })
+				.eq("role", "manager"),
+		]);
 
 		return {
 			total: total.count || 0,
 			superAdmins: superAdmins.count || 0,
-			churchAdmins: churchAdmins.count || 0,
-			contentAdmins: contentAdmins.count || 0,
+			admins: admins.count || 0,
+			managers: managers.count || 0,
 		};
 	},
 );

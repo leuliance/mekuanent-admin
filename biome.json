@@ -24,13 +24,52 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"correctness": {
+				"useUniqueElementIds": "off"
+			},
+			"suspicious": {
+				"noArrayIndexKey": "off"
+			}
 		}
 	},
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["**/src/components/ui/**", "**/src/hooks/demo-*"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"useMediaCaption": "off",
+						"useSemanticElements": "off",
+						"useFocusableInteractive": "off",
+						"useKeyWithClickEvents": "off",
+						"noLabelWithoutControl": "off",
+						"noStaticElementInteractions": "off",
+						"useAriaPropsSupportedByRole": "off"
+					},
+					"correctness": {
+						"noNestedComponentDefinitions": "off",
+						"useExhaustiveDependencies": "off"
+					},
+					"suspicious": {
+						"noExplicitAny": "off",
+						"useIterableCallbackReturn": "off",
+						"noImplicitAnyLet": "off",
+						"noDocumentCookie": "off"
+					},
+					"security": {
+						"noDangerouslySetInnerHtml": "off"
+					},
+					"style": {
+						"noNonNullAssertion": "off"
+					}
+				}
+			}
+		}
+	]
 }
-

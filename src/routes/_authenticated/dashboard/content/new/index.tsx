@@ -1,33 +1,31 @@
-import {
-  createFileRoute,
-  useNavigate,
-  useRouter,
-  Link,
-} from "@tanstack/react-router";
-import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import {
+	createFileRoute,
+	Link,
+	useNavigate,
+	useRouter,
+} from "@tanstack/react-router";
+import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { useState } from "react";
 import { z } from "zod";
-import { createContentItem } from "@/api/content";
 import { getChurches } from "@/api/churches";
-import { useLocaleStore, getLocalizedText } from "@/stores/locale-store";
+import { createContentItem } from "@/api/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 } from "@/components/ui/select";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+	getLocalizedText,
+	LOCALES,
+	useLocaleStore,
+} from "@/stores/locale-store";
 import type { Database } from "@/types/database.types";
 
 type ContentType = Database["public"]["Enums"]["content_type"];
@@ -35,364 +33,350 @@ type ContentStatus = Database["public"]["Enums"]["content_status"];
 
 // ============ HELPERS ============
 function getErrorMessage(error: unknown): string {
-  if (!error) return "";
-  if (typeof error === "string") return error;
-  if (typeof error === "object" && error !== null) {
-    if ("message" in error) {
-      const msg = (error as Record<string, unknown>).message;
-      if (typeof msg === "string") return msg;
-    }
-    if (
-      "issues" in error &&
-      Array.isArray((error as Record<string, unknown>).issues)
-    ) {
-      const issues = (error as { issues: Array<{ message: string }> }).issues;
-      return issues[0]?.message || "";
-    }
-  }
-  try {
-    const str = JSON.stringify(error);
-    if (str && str !== "{}") return str;
-  } catch {
-    /* ignore */
-  }
-  return "";
+	if (!error) return "";
+	if (typeof error === "string") return error;
+	if (typeof error === "object" && error !== null) {
+		if ("message" in error) {
+			const msg = (error as Record<string, unknown>).message;
+			if (typeof msg === "string") return msg;
+		}
+		if (
+			"issues" in error &&
+			Array.isArray((error as Record<string, unknown>).issues)
+		) {
+			const issues = (error as { issues: Array<{ message: string }> }).issues;
+			return issues[0]?.message || "";
+		}
+	}
+	try {
+		const str = JSON.stringify(error);
+		if (str && str !== "{}") return str;
+	} catch {
+		/* ignore */
+	}
+	return "";
 }
 
 function FieldError({ errors }: { errors: unknown[] }) {
-  if (!errors || errors.length === 0) return null;
-  const msg = getErrorMessage(errors[0]);
-  if (!msg) return null;
-  return <p className="text-xs text-destructive">{msg}</p>;
+	if (!errors || errors.length === 0) return null;
+	const msg = getErrorMessage(errors[0]);
+	if (!msg) return null;
+	return <p className="text-xs text-destructive">{msg}</p>;
 }
 
 // ============ SCHEMA ============
 const createContentSchema = z.object({
-  title_en: z.string().min(1, "English title is required"),
-  title_am: z.string().min(1, "Amharic title is required"),
-  description_en: z.string(),
-  description_am: z.string(),
-  content_type: z.enum(["audio", "video", "article", "story", "room"]),
-  church_id: z.string().min(1, "Church is required"),
-  thumbnail_url: z.string(),
-  status: z.enum([
-    "draft",
-    "pending_approval",
-    "approved",
-    "rejected",
-    "archived",
-  ]),
+	title: z.string().min(1, "Title is required"),
+	description: z.string(),
+	language: z.enum(["en", "am", "or", "ti", "so"]),
+	content_type: z.enum(["audio", "video", "article", "story", "room", "short"]),
+	church_id: z.string().min(1, "Church is required"),
+	thumbnail_url: z.string(),
+	status: z.enum([
+		"draft",
+		"pending_approval",
+		"approved",
+		"rejected",
+		"archived",
+	]),
 });
 
 function SectionCard({
-  title,
-  children,
+	title,
+	children,
 }: {
-  title: string;
-  children: React.ReactNode;
+	title: string;
+	children: React.ReactNode;
 }) {
-  return (
-    <div className="min-w-0 rounded-xl border bg-card p-4 sm:p-5">
-      <h2 className="mb-4 text-sm font-semibold text-foreground">{title}</h2>
-      {children}
-    </div>
-  );
+	return (
+		<div className="min-w-0 rounded-xl border bg-card p-4 sm:p-5">
+			<h2 className="mb-4 text-sm font-semibold text-foreground">{title}</h2>
+			{children}
+		</div>
+	);
 }
 
-export const Route = createFileRoute(
-  "/_authenticated/dashboard/content/new/"
-)({
-  loader: async () => {
-    // Load churches for the dropdown
-    const churchesData = await getChurches({
-      data: { page: 1, limit: 100 },
-    });
-    return { churches: churchesData.churches };
-  },
-  component: NewContentPage,
+export const Route = createFileRoute("/_authenticated/dashboard/content/new/")({
+	loader: async () => {
+		// Load churches for the dropdown
+		const churchesData = await getChurches({
+			data: { page: 1, limit: 100 },
+		});
+		return { churches: churchesData.churches };
+	},
+	component: NewContentPage,
 });
 
 function NewContentPage() {
-  const navigate = useNavigate();
-  const router = useRouter();
-  const { locale } = useLocaleStore();
-  const { churches } = Route.useLoaderData();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+	const navigate = useNavigate();
+	const router = useRouter();
+	const { locale } = useLocaleStore();
+	const { churches } = Route.useLoaderData();
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm({
-    defaultValues: {
-      title_en: "",
-      title_am: "",
-      description_en: "",
-      description_am: "",
-      content_type: "video" as ContentType,
-      church_id: "",
-      thumbnail_url: "",
-      status: "draft" as ContentStatus,
-    },
-    validators: {
-      onBlur: createContentSchema,
-    },
-    onSubmit: async ({ value }) => {
-      setIsSubmitting(true);
-      try {
-        await createContentItem({
-          data: {
-            title_en: value.title_en,
-            title_am: value.title_am,
-            description_en: value.description_en || undefined,
-            description_am: value.description_am || undefined,
-            content_type: value.content_type,
-            church_id: value.church_id,
-            thumbnail_url: value.thumbnail_url || undefined,
-            status: value.status,
-            created_by: "", // Will be set server-side in a real app
-          },
-        });
-        router.invalidate();
-        navigate({ to: "/dashboard/content", search: { page: 1, search: undefined } });
-      } catch (error) {
-        console.error("Failed to create content:", error);
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-  });
+	const form = useForm({
+		defaultValues: {
+			title: "",
+			description: "",
+			language: "en" as "en" | "am" | "or" | "ti" | "so",
+			content_type: "video" as ContentType,
+			church_id: "",
+			thumbnail_url: "",
+			status: "draft" as ContentStatus,
+		},
+		validators: {
+			onBlur: createContentSchema,
+		},
+		onSubmit: async ({ value }) => {
+			setIsSubmitting(true);
+			try {
+				await createContentItem({
+					data: {
+						title: value.title,
+						description: value.description || undefined,
+						language: value.language,
+						content_type: value.content_type,
+						church_id: value.church_id,
+						thumbnail_url: value.thumbnail_url || undefined,
+						status: value.status,
+						created_by: "", // Will be set server-side in a real app
+					},
+				});
+				router.invalidate();
+				navigate({
+					to: "/dashboard/content",
+					search: { page: 1, search: undefined },
+				});
+			} catch (error) {
+				console.error("Failed to create content:", error);
+			} finally {
+				setIsSubmitting(false);
+			}
+		},
+	});
 
-  const hasRequiredFields =
-    !!form.state.values.title_en &&
-    !!form.state.values.title_am &&
-    !!form.state.values.church_id;
+	const hasRequiredFields =
+		!!form.state.values.title && !!form.state.values.church_id;
 
-  return (
-    <>
-      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
-        <div className="mx-auto w-full max-w-3xl min-w-0 space-y-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            render={<Link to="/dashboard/content" search={{ page: 1, search: undefined }} />}
-            nativeButton={false}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Content
-          </Button>
+	return (
+		<div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
+			<div className="mx-auto w-full max-w-3xl min-w-0 space-y-6">
+				<Button
+					variant="ghost"
+					size="sm"
+					render={
+						<Link
+							to="/dashboard/content"
+							search={{ page: 1, search: undefined }}
+						/>
+					}
+					nativeButton={false}
+				>
+					<ArrowLeft className="h-4 w-4 mr-2" />
+					Back to Content
+				</Button>
 
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Add New Content
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Fill in the content details. Fields marked with * are required in
-              English and Amharic.
-            </p>
-          </div>
+				<div>
+					<h1 className="text-2xl font-bold tracking-tight">Add New Content</h1>
+					<p className="text-muted-foreground mt-1">
+						Fill in the content details. Fields marked with * are required in
+						English and Amharic.
+					</p>
+				</div>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              form.handleSubmit();
-            }}
-            className="space-y-8"
-          >
-            {/* Title Section */}
-            <SectionCard title="Content Title *">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <form.Field name="title_en">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">English *</Label>
-                      <Input
-                        placeholder="Content title in English"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                      />
-                      <FieldError errors={field.state.meta.errors} />
-                    </div>
-                  )}
-                </form.Field>
-                <form.Field name="title_am">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Amharic (አማርኛ) *</Label>
-                      <Input
-                        placeholder="Content title in Amharic"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                      />
-                      <FieldError errors={field.state.meta.errors} />
-                    </div>
-                  )}
-                </form.Field>
-              </div>
-            </SectionCard>
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						form.handleSubmit();
+					}}
+					className="space-y-8"
+				>
+					{/* Title & Language Section */}
+					<SectionCard title="Content Title *">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							<form.Field name="title">
+								{(field) => (
+									<div className="space-y-1.5">
+										<Label className="text-xs">Title *</Label>
+										<Input
+											placeholder="Content title"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+										/>
+										<FieldError errors={field.state.meta.errors} />
+									</div>
+								)}
+							</form.Field>
+							<form.Field name="language">
+								{(field) => (
+									<div className="space-y-1.5">
+										<Label className="text-xs">Language *</Label>
+										<Select
+											value={field.state.value}
+											onValueChange={(v) =>
+												field.handleChange(
+													(v || "en") as "en" | "am" | "or" | "ti" | "so",
+												)
+											}
+										>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{LOCALES.map((loc) => (
+													<SelectItem key={loc.value} value={loc.value}>
+														{loc.nativeLabel}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								)}
+							</form.Field>
+						</div>
+					</SectionCard>
 
-            {/* Basic Information */}
-            <SectionCard title="Basic Information">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <form.Field name="content_type">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Content Type *</Label>
-                      <Select
-                        value={field.state.value}
-                        onValueChange={(v) =>
-                          field.handleChange(v as ContentType)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="video">Video</SelectItem>
-                          <SelectItem value="audio">Audio</SelectItem>
-                          <SelectItem value="article">Article</SelectItem>
-                          <SelectItem value="story">Story</SelectItem>
-                          <SelectItem value="room">Room</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </form.Field>
-                <form.Field name="church_id">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Church *</Label>
-                      <Select
-                        value={field.state.value}
-                        onValueChange={(v) => field.handleChange(v || "")}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a church" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {churches.map(
-                            (church: { id: string; name: unknown }) => (
-                              <SelectItem key={church.id} value={church.id}>
-                                {getLocalizedText(church.name, locale)}
-                              </SelectItem>
-                            )
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FieldError errors={field.state.meta.errors} />
-                    </div>
-                  )}
-                </form.Field>
-                <form.Field name="status">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Status</Label>
-                      <Select
-                        value={field.state.value}
-                        onValueChange={(v) =>
-                          field.handleChange(v as ContentStatus)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="pending_approval">
-                            Pending Approval
-                          </SelectItem>
-                          <SelectItem value="approved">Approved</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </form.Field>
-                <form.Field name="thumbnail_url">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Thumbnail URL</Label>
-                      <Input
-                        placeholder="https://..."
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                      />
-                    </div>
-                  )}
-                </form.Field>
-              </div>
-            </SectionCard>
+					{/* Basic Information */}
+					<SectionCard title="Basic Information">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							<form.Field name="content_type">
+								{(field) => (
+									<div className="space-y-1.5">
+										<Label className="text-xs">Content Type *</Label>
+										<Select
+											value={field.state.value}
+											onValueChange={(v) =>
+												field.handleChange(v as ContentType)
+											}
+										>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="video">Video</SelectItem>
+												<SelectItem value="audio">Audio</SelectItem>
+												<SelectItem value="article">Article</SelectItem>
+												<SelectItem value="story">Story</SelectItem>
+												<SelectItem value="room">Room</SelectItem>
+												<SelectItem value="short">Short</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								)}
+							</form.Field>
+							<form.Field name="church_id">
+								{(field) => (
+									<div className="space-y-1.5">
+										<Label className="text-xs">Church *</Label>
+										<Select
+											value={field.state.value}
+											onValueChange={(v) => field.handleChange(v || "")}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select a church" />
+											</SelectTrigger>
+											<SelectContent>
+												{churches.map(
+													(church: { id: string; name: unknown }) => (
+														<SelectItem key={church.id} value={church.id}>
+															{getLocalizedText(church.name, locale)}
+														</SelectItem>
+													),
+												)}
+											</SelectContent>
+										</Select>
+										<FieldError errors={field.state.meta.errors} />
+									</div>
+								)}
+							</form.Field>
+							<form.Field name="status">
+								{(field) => (
+									<div className="space-y-1.5">
+										<Label className="text-xs">Status</Label>
+										<Select
+											value={field.state.value}
+											onValueChange={(v) =>
+												field.handleChange(v as ContentStatus)
+											}
+										>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="draft">Draft</SelectItem>
+												<SelectItem value="pending_approval">
+													Pending Approval
+												</SelectItem>
+												<SelectItem value="approved">Approved</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								)}
+							</form.Field>
+							<form.Field name="thumbnail_url">
+								{(field) => (
+									<div className="space-y-1.5">
+										<Label className="text-xs">Thumbnail URL</Label>
+										<Input
+											placeholder="https://..."
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+										/>
+									</div>
+								)}
+							</form.Field>
+						</div>
+					</SectionCard>
 
-            {/* Description */}
-            <SectionCard title="Description">
-              <Tabs defaultValue="en" className="min-w-0">
-                <TabsList className="mb-3 h-auto w-full flex-wrap justify-start gap-1 bg-muted/50 p-1">
-                  <TabsTrigger value="en" className="flex-1 sm:flex-none">
-                    English
-                  </TabsTrigger>
-                  <TabsTrigger value="am" className="flex-1 sm:flex-none">
-                    አማርኛ
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="en" className="mt-0 min-w-0">
-                  <form.Field name="description_en">
-                    {(field) => (
-                      <div className="min-w-0 space-y-1.5">
-                        <RichTextEditor
-                          value={field.state.value}
-                          onChange={(html) => field.handleChange(html)}
-                          placeholder="Describe the content in English..."
-                          className="min-w-0 max-w-full"
-                        />
-                      </div>
-                    )}
-                  </form.Field>
-                </TabsContent>
-                <TabsContent value="am" className="mt-0 min-w-0">
-                  <form.Field name="description_am">
-                    {(field) => (
-                      <div className="min-w-0 space-y-1.5">
-                        <RichTextEditor
-                          value={field.state.value}
-                          onChange={(html) => field.handleChange(html)}
-                          placeholder="Describe the content in Amharic..."
-                          className="min-w-0 max-w-full"
-                        />
-                      </div>
-                    )}
-                  </form.Field>
-                </TabsContent>
-              </Tabs>
-            </SectionCard>
+					{/* Description */}
+					<SectionCard title="Description">
+						<form.Field name="description">
+							{(field) => (
+								<div className="min-w-0 space-y-1.5">
+									<RichTextEditor
+										value={field.state.value}
+										onChange={(html) => field.handleChange(html)}
+										placeholder="Describe the content..."
+										className="min-w-0 max-w-full"
+									/>
+								</div>
+							)}
+						</form.Field>
+					</SectionCard>
 
-            {/* Submit */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                render={<Link to="/dashboard/content" search={{ page: 1, search: undefined }} />}
-                nativeButton={false}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !hasRequiredFields}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Create Content
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </>
-  );
+					{/* Submit */}
+					<div className="flex items-center justify-end gap-3 pt-4 border-t">
+						<Button
+							type="button"
+							variant="outline"
+							render={
+								<Link
+									to="/dashboard/content"
+									search={{ page: 1, search: undefined }}
+								/>
+							}
+							nativeButton={false}
+						>
+							Cancel
+						</Button>
+						<Button type="submit" disabled={isSubmitting || !hasRequiredFields}>
+							{isSubmitting ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Creating...
+								</>
+							) : (
+								<>
+									<Save className="mr-2 h-4 w-4" />
+									Create Content
+								</>
+							)}
+						</Button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
 }

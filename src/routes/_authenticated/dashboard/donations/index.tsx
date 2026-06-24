@@ -12,12 +12,12 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	DollarSign,
+	ExternalLink,
 	Filter,
 	Loader2,
 	Target,
 	Trash2,
 	TrendingUp,
-	ExternalLink,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -60,8 +60,8 @@ import { TabsContent } from "@/components/ui/tabs";
 import { canDelete } from "@/lib/roles";
 import {
 	getLocalizedText,
-	useLocaleStore,
 	type Locale,
+	useLocaleStore,
 } from "@/stores/locale-store";
 import type { Database } from "@/types/database.types";
 
@@ -154,46 +154,40 @@ export const Route = createFileRoute("/_authenticated/dashboard/donations/")({
 // ============ LOADING SKELETON ============
 function DonationsLoadingSkeleton() {
 	return (
-		<>
-			<div className="flex-1 overflow-auto p-6">
-				<div className="max-w-7xl mx-auto space-y-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<Skeleton className="h-8 w-32 mb-2" />
-							<Skeleton className="h-4 w-56" />
-						</div>
+		<div className="flex-1 overflow-auto p-6">
+			<div className="max-w-7xl mx-auto space-y-6">
+				<div className="flex items-center justify-between">
+					<div>
+						<Skeleton className="h-8 w-32 mb-2" />
+						<Skeleton className="h-4 w-56" />
 					</div>
-					<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-						{Array.from({ length: 4 }).map((_, i) => (
-							<Skeleton key={i} className="h-24 rounded-xl" />
-						))}
-					</div>
-					<Skeleton className="h-96 w-full rounded-xl" />
 				</div>
+				<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<Skeleton key={i} className="h-24 rounded-xl" />
+					))}
+				</div>
+				<Skeleton className="h-96 w-full rounded-xl" />
 			</div>
-		</>
+		</div>
 	);
 }
 
 // ============ ERROR STATE ============
 function DonationsErrorState({ error }: { error: Error }) {
 	return (
-		<>
-			<div className="flex-1 flex items-center justify-center p-6">
-				<div className="text-center max-w-md">
-					<div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-						<AlertCircle className="w-8 h-8 text-destructive" />
-					</div>
-					<h2 className="text-xl font-semibold mb-2">
-						Failed to Load Donations
-					</h2>
-					<p className="text-muted-foreground mb-4">
-						{error.message || "An unexpected error occurred."}
-					</p>
-					<Button onClick={() => window.location.reload()}>Try Again</Button>
+		<div className="flex-1 flex items-center justify-center p-6">
+			<div className="text-center max-w-md">
+				<div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+					<AlertCircle className="w-8 h-8 text-destructive" />
 				</div>
+				<h2 className="text-xl font-semibold mb-2">Failed to Load Donations</h2>
+				<p className="text-muted-foreground mb-4">
+					{error.message || "An unexpected error occurred."}
+				</p>
+				<Button onClick={() => window.location.reload()}>Try Again</Button>
 			</div>
-		</>
+		</div>
 	);
 }
 
@@ -294,7 +288,7 @@ function DonationsPage() {
 
 	useEffect(() => {
 		debouncedSearch.maybeExecute(campaignSearchInput);
-	}, [campaignSearchInput]);
+	}, [campaignSearchInput, debouncedSearch.maybeExecute]);
 
 	const formatCurrency = (amount: number, currency = "ETB") =>
 		new Intl.NumberFormat("en-US", {
@@ -501,7 +495,9 @@ function DonationsPage() {
 									<div className="mb-4 flex size-14 items-center justify-center rounded-full bg-muted">
 										<DollarSign className="size-7 text-muted-foreground" />
 									</div>
-									<p className="font-medium text-foreground">No donations yet</p>
+									<p className="font-medium text-foreground">
+										No donations yet
+									</p>
 									<p className="mt-1 max-w-sm text-sm text-muted-foreground">
 										Contributions will show here as they come in.
 									</p>
@@ -520,6 +516,7 @@ function DonationsPage() {
 									</p>
 									<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
 										{flatDonations.map((donation) => {
+											// biome-ignore lint/suspicious/noExplicitAny: dynamic serialized donation row with joined relations
 											const d = donation as Record<string, any>;
 											const isAnon = Boolean(d.is_anonymous);
 											const fromWallet = Boolean(d.from_wallet);
@@ -535,6 +532,7 @@ function DonationsPage() {
 												locale,
 											);
 											return (
+												// biome-ignore lint/a11y/useSemanticElements: clickable card with full keyboard handling (Enter/Space)
 												<div
 													key={donation.id as string}
 													role="button"
@@ -628,15 +626,15 @@ function DonationsPage() {
 														{paymentInfo ? (
 															<div className="min-w-0 space-y-0.5">
 																<p className="truncate font-medium capitalize text-foreground">
-																	{(paymentInfo.payment_gateway ||
-																		paymentInfo.payment_method ||
-																		"-") as string}
+																	{
+																		(paymentInfo.payment_gateway ||
+																			paymentInfo.payment_method ||
+																			"-") as string
+																	}
 																</p>
 																{paymentInfo.gateway_transaction_id ? (
 																	<p className="truncate font-mono text-[10px]">
-																		{String(
-																			paymentInfo.gateway_transaction_id,
-																		)}
+																		{String(paymentInfo.gateway_transaction_id)}
 																	</p>
 																) : null}
 															</div>
@@ -1004,6 +1002,7 @@ function DonationDetailPanel({
 	donationStatusColors: Record<string, string>;
 	getInitials: (first?: string | null, last?: string | null) => string;
 }) {
+	// biome-ignore lint/suspicious/noExplicitAny: dynamic serialized donation row with joined relations
 	const d = donation as Record<string, any>;
 	const isAnon = Boolean(d.is_anonymous);
 	const fromWallet = Boolean(d.from_wallet);
@@ -1083,9 +1082,7 @@ function DonationDetailPanel({
 					</div>
 					<div>
 						<p className="text-xs text-muted-foreground">Created</p>
-						<p>
-							{new Date(donation.created_at as string).toLocaleString()}
-						</p>
+						<p>{new Date(donation.created_at as string).toLocaleString()}</p>
 					</div>
 					{d.updated_at && d.updated_at !== d.created_at ? (
 						<div>
@@ -1102,11 +1099,15 @@ function DonationDetailPanel({
 					{paymentInfo ? (
 						<dl className="space-y-2">
 							<div>
-								<dt className="text-xs text-muted-foreground">Method / gateway</dt>
+								<dt className="text-xs text-muted-foreground">
+									Method / gateway
+								</dt>
 								<dd className="font-medium capitalize">
-									{(paymentInfo.payment_gateway ||
-										paymentInfo.payment_method ||
-										"—") as string}
+									{
+										(paymentInfo.payment_gateway ||
+											paymentInfo.payment_method ||
+											"—") as string
+									}
 								</dd>
 							</div>
 							{paymentInfo.gateway_transaction_id ? (
@@ -1138,12 +1139,7 @@ function DonationDetailPanel({
 						variant="outline"
 						size="sm"
 						className="w-full"
-						render={
-							<Link
-								to="/dashboard/users/$userId"
-								params={{ userId }}
-							/>
-						}
+						render={<Link to="/dashboard/users/$userId" params={{ userId }} />}
 						nativeButton={false}
 					>
 						View donor profile

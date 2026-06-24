@@ -13,34 +13,8 @@ export type ChurchUpdate = Database["public"]["Tables"]["churches"]["Update"];
 // biome-ignore lint/suspicious/noExplicitAny: Required for JSON serialization of Supabase types with unknown fields
 const serialize = <T>(data: T): any => JSON.parse(JSON.stringify(data));
 
-// Helper to build localized JSON from flat fields
-function buildLocalizedJson(
-	data: Record<string, unknown>,
-	prefix: string,
-): Record<string, string> | null {
-	const locales = ["en", "am", "or", "so", "ti"];
-	const result: Record<string, string> = {};
-	let hasValue = false;
-	for (const loc of locales) {
-		const val = data[`${prefix}_${loc}`];
-		if (typeof val === "string" && val) {
-			result[loc] = val;
-			hasValue = true;
-		} else {
-			result[loc] = "";
-		}
-	}
-	return hasValue ? result : null;
-}
-
-function hasAnyLocaleField(
-	data: Record<string, unknown>,
-	prefix: string,
-): boolean {
-	return ["en", "am", "or", "so", "ti"].some(
-		(loc) => data[`${prefix}_${loc}`] !== undefined,
-	);
-}
+// Supported content languages (matches the DB `language` check constraint).
+const languageSchema = z.enum(["en", "am", "or", "ti", "so"]);
 
 // Schemas
 const getChurchesSchema = z.object({
@@ -56,35 +30,16 @@ const getChurchSchema = z.object({
 });
 
 const createChurchSchema = z.object({
-	name_en: z.string(),
-	name_am: z.string(),
-	name_or: z.string().optional(),
-	name_so: z.string().optional(),
-	name_ti: z.string().optional(),
-	description_en: z.string(),
-	description_am: z.string(),
-	description_or: z.string().optional(),
-	description_so: z.string().optional(),
-	description_ti: z.string().optional(),
+	name: z.string().min(1),
+	description: z.string().optional().default(""),
+	language: languageSchema.optional().default("en"),
 	category: z.enum(["church", "monastery", "female-monastery"]),
 	phone_number: z.string(),
 	email: z.string().optional(),
 	website: z.string().optional(),
-	city_en: z.string().optional(),
-	city_am: z.string().optional(),
-	city_or: z.string().optional(),
-	city_so: z.string().optional(),
-	city_ti: z.string().optional(),
-	address_en: z.string().optional(),
-	address_am: z.string().optional(),
-	address_or: z.string().optional(),
-	address_so: z.string().optional(),
-	address_ti: z.string().optional(),
-	country_en: z.string().optional(),
-	country_am: z.string().optional(),
-	country_or: z.string().optional(),
-	country_so: z.string().optional(),
-	country_ti: z.string().optional(),
+	city: z.string().optional(),
+	address: z.string().optional(),
+	country: z.string().optional(),
 	founded_year: z.number().optional(),
 });
 
@@ -97,35 +52,16 @@ const updateChurchStatusSchema = z.object({
 
 const updateChurchSchema = z.object({
 	id: z.string(),
-	name_en: z.string().optional(),
-	name_am: z.string().optional(),
-	name_or: z.string().optional(),
-	name_so: z.string().optional(),
-	name_ti: z.string().optional(),
-	description_en: z.string().optional(),
-	description_am: z.string().optional(),
-	description_or: z.string().optional(),
-	description_so: z.string().optional(),
-	description_ti: z.string().optional(),
+	name: z.string().optional(),
+	description: z.string().optional(),
+	language: languageSchema.optional(),
 	category: z.enum(["church", "monastery", "female-monastery"]).optional(),
 	phone_number: z.string().optional(),
 	email: z.string().optional(),
 	website: z.string().optional(),
-	city_en: z.string().optional(),
-	city_am: z.string().optional(),
-	city_or: z.string().optional(),
-	city_so: z.string().optional(),
-	city_ti: z.string().optional(),
-	address_en: z.string().optional(),
-	address_am: z.string().optional(),
-	address_or: z.string().optional(),
-	address_so: z.string().optional(),
-	address_ti: z.string().optional(),
-	country_en: z.string().optional(),
-	country_am: z.string().optional(),
-	country_or: z.string().optional(),
-	country_so: z.string().optional(),
-	country_ti: z.string().optional(),
+	city: z.string().optional(),
+	address: z.string().optional(),
+	country: z.string().optional(),
 	founded_year: z.number().optional(),
 });
 
@@ -135,7 +71,7 @@ const deleteChurchSchema = z.object({
 
 // Get all churches with pagination and filters
 export const getChurches = createServerFn({ method: "GET" })
-	.inputValidator(getChurchesSchema)
+	.validator(getChurchesSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const page = data.page || 1;
@@ -158,7 +94,7 @@ export const getChurches = createServerFn({ method: "GET" })
 
 		if (data.search) {
 			query = query.or(
-				`name->>en.ilike.%${data.search}%,name->>am.ilike.%${data.search}%,phone_number.ilike.%${data.search}%`,
+				`name.ilike.%${data.search}%,phone_number.ilike.%${data.search}%`,
 			);
 		}
 
@@ -179,7 +115,7 @@ export const getChurches = createServerFn({ method: "GET" })
 
 // Get single church by ID
 export const getChurch = createServerFn({ method: "GET" })
-	.inputValidator(getChurchSchema)
+	.validator(getChurchSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -205,7 +141,7 @@ export const getChurch = createServerFn({ method: "GET" })
 
 // Update church status (approve, reject, suspend)
 export const updateChurchStatus = createServerFn({ method: "POST" })
-	.inputValidator(updateChurchStatusSchema)
+	.validator(updateChurchStatusSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -235,27 +171,21 @@ export const updateChurchStatus = createServerFn({ method: "POST" })
 
 // Create a new church
 export const createChurch = createServerFn({ method: "POST" })
-	.inputValidator(createChurchSchema)
+	.validator(createChurchSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
-		const dataRecord = data as unknown as Record<string, unknown>;
 
 		const insertData: ChurchInsert = {
-			name: buildLocalizedJson(dataRecord, "name") || {
-				en: data.name_en,
-				am: data.name_am,
-			},
-			description: buildLocalizedJson(dataRecord, "description") || {
-				en: data.description_en,
-				am: data.description_am,
-			},
+			name: data.name,
+			description: data.description ?? "",
+			language: data.language ?? "en",
 			category: data.category,
 			phone_number: data.phone_number,
 			email: data.email || null,
 			website: data.website || null,
-			city: buildLocalizedJson(dataRecord, "city"),
-			address: buildLocalizedJson(dataRecord, "address"),
-			country: buildLocalizedJson(dataRecord, "country"),
+			city: data.city || null,
+			address: data.address || null,
+			country: data.country || null,
 			founded_year: data.founded_year || null,
 			coordinates: null,
 			status: "pending",
@@ -276,32 +206,23 @@ export const createChurch = createServerFn({ method: "POST" })
 
 // Update church details
 export const updateChurch = createServerFn({ method: "POST" })
-	.inputValidator(updateChurchSchema)
+	.validator(updateChurchSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
-		const dataRecord = data as unknown as Record<string, unknown>;
 
 		const updateData: ChurchUpdate = {};
 
-		if (hasAnyLocaleField(dataRecord, "name")) {
-			updateData.name = buildLocalizedJson(dataRecord, "name");
-		}
-		if (hasAnyLocaleField(dataRecord, "description")) {
-			updateData.description = buildLocalizedJson(dataRecord, "description");
-		}
+		if (data.name !== undefined) updateData.name = data.name;
+		if (data.description !== undefined)
+			updateData.description = data.description;
+		if (data.language !== undefined) updateData.language = data.language;
 		if (data.category) updateData.category = data.category;
 		if (data.phone_number) updateData.phone_number = data.phone_number;
 		if (data.email !== undefined) updateData.email = data.email || null;
 		if (data.website !== undefined) updateData.website = data.website || null;
-		if (hasAnyLocaleField(dataRecord, "city")) {
-			updateData.city = buildLocalizedJson(dataRecord, "city");
-		}
-		if (hasAnyLocaleField(dataRecord, "address")) {
-			updateData.address = buildLocalizedJson(dataRecord, "address");
-		}
-		if (hasAnyLocaleField(dataRecord, "country")) {
-			updateData.country = buildLocalizedJson(dataRecord, "country");
-		}
+		if (data.city !== undefined) updateData.city = data.city || null;
+		if (data.address !== undefined) updateData.address = data.address || null;
+		if (data.country !== undefined) updateData.country = data.country || null;
 		if (data.founded_year !== undefined)
 			updateData.founded_year = data.founded_year;
 
@@ -321,7 +242,7 @@ export const updateChurch = createServerFn({ method: "POST" })
 
 // Delete a church
 export const deleteChurch = createServerFn({ method: "POST" })
-	.inputValidator(deleteChurchSchema)
+	.validator(deleteChurchSchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -342,11 +263,7 @@ export const deleteChurch = createServerFn({ method: "POST" })
 
 const createBankAccountSchema = z.object({
 	church_id: z.string(),
-	bank_name_en: z.string(),
-	bank_name_am: z.string(),
-	bank_name_or: z.string().optional(),
-	bank_name_so: z.string().optional(),
-	bank_name_ti: z.string().optional(),
+	bank_name: z.string().min(1),
 	account_number: z.string(),
 	account_holder_name: z.string(),
 	branch_name: z.string().optional(),
@@ -356,11 +273,7 @@ const createBankAccountSchema = z.object({
 
 const updateBankAccountSchema = z.object({
 	id: z.string(),
-	bank_name_en: z.string().optional(),
-	bank_name_am: z.string().optional(),
-	bank_name_or: z.string().optional(),
-	bank_name_so: z.string().optional(),
-	bank_name_ti: z.string().optional(),
+	bank_name: z.string().optional(),
 	account_number: z.string().optional(),
 	account_holder_name: z.string().optional(),
 	branch_name: z.string().optional(),
@@ -372,19 +285,15 @@ const updateBankAccountSchema = z.object({
 const deleteBankAccountSchema = z.object({ id: z.string() });
 
 export const createBankAccount = createServerFn({ method: "POST" })
-	.inputValidator(createBankAccountSchema)
+	.validator(createBankAccountSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
-		const dataRecord = data as unknown as Record<string, unknown>;
 
 		const { data: account, error } = await supabase
 			.from("bank_accounts")
 			.insert({
 				church_id: data.church_id,
-				bank_name: buildLocalizedJson(dataRecord, "bank_name") || {
-					en: data.bank_name_en,
-					am: data.bank_name_am,
-				},
+				bank_name: data.bank_name,
 				account_number: data.account_number,
 				account_holder_name: data.account_holder_name,
 				branch_name: data.branch_name || null,
@@ -399,16 +308,13 @@ export const createBankAccount = createServerFn({ method: "POST" })
 	});
 
 export const updateBankAccount = createServerFn({ method: "POST" })
-	.inputValidator(updateBankAccountSchema)
+	.validator(updateBankAccountSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
-		const dataRecord = data as unknown as Record<string, unknown>;
 
 		// biome-ignore lint/suspicious/noExplicitAny: Dynamic update object
 		const updateData: any = {};
-		if (hasAnyLocaleField(dataRecord, "bank_name")) {
-			updateData.bank_name = buildLocalizedJson(dataRecord, "bank_name");
-		}
+		if (data.bank_name !== undefined) updateData.bank_name = data.bank_name;
 		if (data.account_number !== undefined)
 			updateData.account_number = data.account_number;
 		if (data.account_holder_name !== undefined)
@@ -432,7 +338,7 @@ export const updateBankAccount = createServerFn({ method: "POST" })
 	});
 
 export const deleteBankAccount = createServerFn({ method: "POST" })
-	.inputValidator(deleteBankAccountSchema)
+	.validator(deleteBankAccountSchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -455,7 +361,7 @@ const addChurchImageSchema = z.object({
 const deleteChurchImageSchema = z.object({ id: z.string() });
 
 export const addChurchImage = createServerFn({ method: "POST" })
-	.inputValidator(addChurchImageSchema)
+	.validator(addChurchImageSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { data: image, error } = await supabase
@@ -472,7 +378,7 @@ export const addChurchImage = createServerFn({ method: "POST" })
 	});
 
 export const deleteChurchImage = createServerFn({ method: "POST" })
-	.inputValidator(deleteChurchImageSchema)
+	.validator(deleteChurchImageSchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();

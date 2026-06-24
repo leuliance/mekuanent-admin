@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { assertSuperAdmin } from "@/lib/server-auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database.types";
 
 // biome-ignore lint/suspicious/noExplicitAny: Required for JSON serialization of Supabase types with unknown fields
 const serialize = <T>(data: T): any => JSON.parse(JSON.stringify(data));
@@ -21,14 +22,14 @@ export const getEventCategories = createServerFn({ method: "GET" }).handler(
 );
 
 const createEventCategorySchema = z.object({
-	name: z.record(z.string(), z.string()),
-	description: z.record(z.string(), z.string()),
+	name: z.string().min(1),
+	description: z.string().optional().default(""),
 	icon: z.string().optional().nullable(),
 	color: z.string().optional().nullable(),
 });
 
 export const createEventCategory = createServerFn({ method: "POST" })
-	.inputValidator(createEventCategorySchema)
+	.validator(createEventCategorySchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { error } = await supabase.from("event_categories").insert({
@@ -43,20 +44,20 @@ export const createEventCategory = createServerFn({ method: "POST" })
 
 const updateEventCategorySchema = z.object({
 	id: z.string(),
-	name: z.record(z.string(), z.string()).optional(),
-	description: z.record(z.string(), z.string()).optional(),
+	name: z.string().optional(),
+	description: z.string().optional(),
 	icon: z.string().optional().nullable(),
 	color: z.string().optional().nullable(),
 });
 
 export const updateEventCategory = createServerFn({ method: "POST" })
-	.inputValidator(updateEventCategorySchema)
+	.validator(updateEventCategorySchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { id, ...updateData } = data;
 		const cleanData = Object.fromEntries(
 			Object.entries(updateData).filter(([_, v]) => v !== undefined),
-		);
+		) as Database["public"]["Tables"]["event_categories"]["Update"];
 		const { error } = await supabase
 			.from("event_categories")
 			.update(cleanData)
@@ -68,7 +69,7 @@ export const updateEventCategory = createServerFn({ method: "POST" })
 const deleteEventCategorySchema = z.object({ id: z.string() });
 
 export const deleteEventCategory = createServerFn({ method: "POST" })
-	.inputValidator(deleteEventCategorySchema)
+	.validator(deleteEventCategorySchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -106,7 +107,7 @@ const createRegionCategorySchema = z.object({
 });
 
 export const createRegionCategory = createServerFn({ method: "POST" })
-	.inputValidator(createRegionCategorySchema)
+	.validator(createRegionCategorySchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { error } = await supabase.from("region_categories").insert({
@@ -134,13 +135,13 @@ const updateRegionCategorySchema = z.object({
 });
 
 export const updateRegionCategory = createServerFn({ method: "POST" })
-	.inputValidator(updateRegionCategorySchema)
+	.validator(updateRegionCategorySchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { id, ...updateData } = data;
 		const cleanData = Object.fromEntries(
 			Object.entries(updateData).filter(([_, v]) => v !== undefined),
-		);
+		) as Database["public"]["Tables"]["region_categories"]["Update"];
 		const { error } = await supabase
 			.from("region_categories")
 			.update(cleanData)
@@ -152,7 +153,7 @@ export const updateRegionCategory = createServerFn({ method: "POST" })
 const deleteRegionCategorySchema = z.object({ id: z.string() });
 
 export const deleteRegionCategory = createServerFn({ method: "POST" })
-	.inputValidator(deleteRegionCategorySchema)
+	.validator(deleteRegionCategorySchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -179,14 +180,14 @@ export const getDonationCategories = createServerFn({ method: "GET" }).handler(
 );
 
 const createDonationCategorySchema = z.object({
-	name: z.record(z.string(), z.string()),
-	description: z.record(z.string(), z.string()),
+	name: z.string().min(1),
+	description: z.string().optional().default(""),
 	icon: z.string().optional().nullable(),
 	color: z.string().optional().nullable(),
 });
 
 export const createDonationCategory = createServerFn({ method: "POST" })
-	.inputValidator(createDonationCategorySchema)
+	.validator(createDonationCategorySchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { error } = await supabase.from("donation_categories").insert({
@@ -201,20 +202,20 @@ export const createDonationCategory = createServerFn({ method: "POST" })
 
 const updateDonationCategorySchema = z.object({
 	id: z.string(),
-	name: z.record(z.string(), z.string()).optional(),
-	description: z.record(z.string(), z.string()).optional(),
+	name: z.string().optional(),
+	description: z.string().optional(),
 	icon: z.string().optional().nullable(),
 	color: z.string().optional().nullable(),
 });
 
 export const updateDonationCategory = createServerFn({ method: "POST" })
-	.inputValidator(updateDonationCategorySchema)
+	.validator(updateDonationCategorySchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { id, ...updateData } = data;
 		const cleanData = Object.fromEntries(
 			Object.entries(updateData).filter(([_, v]) => v !== undefined),
-		);
+		) as Database["public"]["Tables"]["donation_categories"]["Update"];
 		const { error } = await supabase
 			.from("donation_categories")
 			.update(cleanData)
@@ -226,7 +227,7 @@ export const updateDonationCategory = createServerFn({ method: "POST" })
 const deleteDonationCategorySchema = z.object({ id: z.string() });
 
 export const deleteDonationCategory = createServerFn({ method: "POST" })
-	.inputValidator(deleteDonationCategorySchema)
+	.validator(deleteDonationCategorySchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();

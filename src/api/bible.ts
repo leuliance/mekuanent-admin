@@ -30,7 +30,7 @@ const getBooksSchema = z.object({
 });
 
 export const getBibleBooks = createServerFn({ method: "GET" })
-	.inputValidator(getBooksSchema)
+	.validator(getBooksSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const page = data.page || 1;
@@ -78,7 +78,7 @@ export const getBibleBooks = createServerFn({ method: "GET" })
 	});
 
 export const getBibleBook = createServerFn({ method: "GET" })
-	.inputValidator(z.object({ id: z.string() }))
+	.validator(z.object({ id: z.string() }))
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -157,7 +157,7 @@ function deriveParatextCode(nameEn: string, bookNumber: number): string {
 }
 
 export const createBibleBook = createServerFn({ method: "POST" })
-	.inputValidator(createBookSchema)
+	.validator(createBookSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const testamentStr = testamentString(data.testament);
@@ -202,7 +202,7 @@ const updateBookSchema = z.object({
 });
 
 export const updateBibleBook = createServerFn({ method: "POST" })
-	.inputValidator(updateBookSchema)
+	.validator(updateBookSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { id, ...rest } = data;
@@ -237,7 +237,7 @@ export const updateBibleBook = createServerFn({ method: "POST" })
 	});
 
 export const deleteBibleBook = createServerFn({ method: "POST" })
-	.inputValidator(z.object({ id: z.string() }))
+	.validator(z.object({ id: z.string() }))
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -263,7 +263,7 @@ const getChaptersSchema = z.object({
 });
 
 export const getBibleChapters = createServerFn({ method: "GET" })
-	.inputValidator(getChaptersSchema)
+	.validator(getChaptersSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const page = data.page || 1;
@@ -295,7 +295,7 @@ export const getBibleChapters = createServerFn({ method: "GET" })
 	});
 
 export const getBibleChapter = createServerFn({ method: "GET" })
-	.inputValidator(z.object({ id: z.string() }))
+	.validator(z.object({ id: z.string() }))
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -319,7 +319,7 @@ const createChapterSchema = z.object({
 });
 
 export const createBibleChapter = createServerFn({ method: "POST" })
-	.inputValidator(createChapterSchema)
+	.validator(createChapterSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -343,7 +343,7 @@ const updateChapterSchema = z.object({
 });
 
 export const updateBibleChapter = createServerFn({ method: "POST" })
-	.inputValidator(updateChapterSchema)
+	.validator(updateChapterSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { id, ...updateData } = data;
@@ -363,7 +363,7 @@ export const updateBibleChapter = createServerFn({ method: "POST" })
 	});
 
 export const deleteBibleChapter = createServerFn({ method: "POST" })
-	.inputValidator(z.object({ id: z.string() }))
+	.validator(z.object({ id: z.string() }))
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -390,7 +390,7 @@ const getVersesSchema = z.object({
 });
 
 export const getBibleVerses = createServerFn({ method: "GET" })
-	.inputValidator(getVersesSchema)
+	.validator(getVersesSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const page = data.page || 1;
@@ -426,7 +426,7 @@ export const getBibleVerses = createServerFn({ method: "GET" })
 	});
 
 export const getBibleVerse = createServerFn({ method: "GET" })
-	.inputValidator(z.object({ id: z.string() }))
+	.validator(z.object({ id: z.string() }))
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -449,11 +449,12 @@ const createVerseSchema = z.object({
 	text: z.object({
 		en: z.string(),
 		am: z.string().optional(),
+		gez: z.string().optional(),
 	}),
 });
 
 export const createBibleVerse = createServerFn({ method: "POST" })
-	.inputValidator(createVerseSchema)
+	.validator(createVerseSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -483,6 +484,7 @@ const bulkCreateVersesSchema = z.object({
 				text: z.object({
 					en: z.string().min(1),
 					am: z.string().optional(),
+					gez: z.string().optional(),
 				}),
 			}),
 		)
@@ -492,7 +494,7 @@ const bulkCreateVersesSchema = z.object({
 
 /** Insert many verses in one request (same chapter). */
 export const bulkCreateBibleVerses = createServerFn({ method: "POST" })
-	.inputValidator(bulkCreateVersesSchema)
+	.validator(bulkCreateVersesSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const rows = data.verses.map((v) => ({
@@ -520,12 +522,13 @@ const updateVerseSchema = z.object({
 		.object({
 			en: z.string(),
 			am: z.string().optional(),
+			gez: z.string().optional(),
 		})
 		.optional(),
 });
 
 export const updateBibleVerse = createServerFn({ method: "POST" })
-	.inputValidator(updateVerseSchema)
+	.validator(updateVerseSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { id, verse_number, text } = data;
@@ -552,7 +555,7 @@ export const updateBibleVerse = createServerFn({ method: "POST" })
 	});
 
 export const deleteBibleVerse = createServerFn({ method: "POST" })
-	.inputValidator(z.object({ id: z.string() }))
+	.validator(z.object({ id: z.string() }))
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -572,7 +575,7 @@ export const deleteBibleVerse = createServerFn({ method: "POST" })
 // ==================== SEARCH ====================
 
 export const searchBibleVerses = createServerFn({ method: "GET" })
-	.inputValidator(z.object({ query: z.string() }))
+	.validator(z.object({ query: z.string() }))
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -591,7 +594,7 @@ export const searchBibleVerses = createServerFn({ method: "GET" })
 // ==================== FOOTNOTES ====================
 
 export const getBibleFootnotes = createServerFn({ method: "GET" })
-	.inputValidator(z.object({ verseId: z.string() }))
+	.validator(z.object({ verseId: z.string() }))
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -622,7 +625,7 @@ const createFootnoteSchema = z.object({
 });
 
 export const createBibleFootnote = createServerFn({ method: "POST" })
-	.inputValidator(createFootnoteSchema)
+	.validator(createFootnoteSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -662,7 +665,7 @@ const updateFootnoteSchema = z.object({
 });
 
 export const updateBibleFootnote = createServerFn({ method: "POST" })
-	.inputValidator(updateFootnoteSchema)
+	.validator(updateFootnoteSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -692,7 +695,7 @@ export const updateBibleFootnote = createServerFn({ method: "POST" })
 	});
 
 export const deleteBibleFootnote = createServerFn({ method: "POST" })
-	.inputValidator(z.object({ id: z.string() }))
+	.validator(z.object({ id: z.string() }))
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -712,7 +715,7 @@ export const deleteBibleFootnote = createServerFn({ method: "POST" })
 // ==================== CROSS REFERENCES ====================
 
 export const getBibleCrossReferences = createServerFn({ method: "GET" })
-	.inputValidator(z.object({ verseId: z.string() }))
+	.validator(z.object({ verseId: z.string() }))
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -748,7 +751,7 @@ const createCrossRefSchema = z.object({
 });
 
 export const createBibleCrossReference = createServerFn({ method: "POST" })
-	.inputValidator(createCrossRefSchema)
+	.validator(createCrossRefSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -785,7 +788,7 @@ export const createBibleCrossReference = createServerFn({ method: "POST" })
 	});
 
 export const deleteBibleCrossReference = createServerFn({ method: "POST" })
-	.inputValidator(z.object({ id: z.string() }))
+	.validator(z.object({ id: z.string() }))
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -800,4 +803,148 @@ export const deleteBibleCrossReference = createServerFn({ method: "POST" })
 		}
 
 		return { success: true };
+	});
+
+// ==================== BIBLE TRANSLATIONS ====================
+// Versions/languages are seeded in `bible_translations` (am / gez / en). `code`
+// doubles as the JSONB language key on bible_books.name, bible_verses.text, etc.
+
+export const getBibleTranslations = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const supabase = getSupabaseServerClient();
+		const { data, error } = await supabase
+			.from("bible_translations")
+			.select("*")
+			.eq("is_active", true)
+			.order("sort_order", { ascending: true });
+		if (error) throw new Error(error.message);
+		return serialize(data ?? []);
+	},
+);
+
+// ==================== USFM ====================
+// USFM is the chapter authoring source. We parse it with usfm-js — a pure-JS
+// converter (no native tree-sitter bindings), so it runs in the browser AND on
+// Cloudflare Workers. The parsed JSON is stored on bible_chapters.usfm_content,
+// and flat per-language verse rows are derived for bible_verses.
+
+/** Parse a USFM string to JSON + flat verses (preview, no writes). */
+export const parseUsfm = createServerFn({ method: "POST" })
+	.validator(z.object({ usfm: z.string().min(1) }))
+	.handler(async ({ data }) => {
+		const { parseUsfmString } = await import("@/lib/usfm");
+		const { json, verses, warnings } = parseUsfmString(data.usfm);
+		return serialize({ errors: warnings, usj: json, verses });
+	});
+
+const importUsfmSchema = z.object({
+	chapter_id: z.string(),
+	usfm: z.string().min(1),
+	language: z.string().min(2).max(8).default("am"),
+	replace: z.boolean().default(true),
+});
+
+/**
+ * Parse USFM, store the JSON on the chapter, and merge the imported language into
+ * the verse rows — preserving any other languages already stored per verse.
+ */
+export const importChapterUsfm = createServerFn({ method: "POST" })
+	.validator(importUsfmSchema)
+	.handler(async ({ data }) => {
+		const supabase = getSupabaseServerClient();
+		const { parseUsfmString } = await import("@/lib/usfm");
+		const { json, verses, warnings } = parseUsfmString(data.usfm);
+		if (verses.length === 0) {
+			throw new Error(
+				`No verses found in the USFM.${warnings.length ? ` (${warnings.join(" ")})` : ""}`,
+			);
+		}
+
+		// Persist the parsed JSON as the chapter's canonical USFM content.
+		const { error: chapterError } = await supabase
+			.from("bible_chapters")
+			.update({ usfm_content: json as Json, verse_count: verses.length })
+			.eq("id", data.chapter_id);
+		if (chapterError) throw new Error(chapterError.message);
+
+		// Load existing verses so other-language text survives the import.
+		const { data: existing, error: exErr } = await supabase
+			.from("bible_verses")
+			.select("verse_number, text")
+			.eq("chapter_id", data.chapter_id);
+		if (exErr) throw new Error(exErr.message);
+		const prev = new Map<number, Record<string, unknown>>();
+		for (const r of existing ?? []) {
+			prev.set(r.verse_number, (r.text as Record<string, unknown>) ?? {});
+		}
+
+		const rows = verses.map((v) => ({
+			chapter_id: data.chapter_id,
+			verse_number: v.verse_number,
+			text: {
+				...(prev.get(v.verse_number) ?? {}),
+				[data.language]: v.text,
+			} as Json,
+		}));
+		const { data: inserted, error: insertError } = await supabase
+			.from("bible_verses")
+			.upsert(rows, { onConflict: "chapter_id,verse_number" })
+			.select();
+		if (insertError) throw new Error(insertError.message);
+
+		return serialize({
+			count: inserted?.length ?? 0,
+			verses: inserted ?? [],
+			warnings,
+		});
+	});
+
+/** Build a USFM string for a chapter from its stored JSON (or its verses). */
+export const exportChapterUsfm = createServerFn({ method: "POST" })
+	.validator(
+		z.object({
+			chapter_id: z.string(),
+			language: z.string().min(2).max(8).default("am"),
+		}),
+	)
+	.handler(async ({ data }) => {
+		const supabase = getSupabaseServerClient();
+		const { jsonToUsfm, buildChapterJson } = await import("@/lib/usfm");
+		const { data: chapter, error } = await supabase
+			.from("bible_chapters")
+			.select("*, bible_books(*)")
+			.eq("id", data.chapter_id)
+			.single();
+		if (error) throw new Error(error.message);
+
+		// Prefer the stored JSON; round-trip it straight back to USFM.
+		if (chapter.usfm_content) {
+			return serialize({ usfm: jsonToUsfm(chapter.usfm_content) });
+		}
+
+		// Fallback: construct minimal JSON from the verse rows, then generate USFM.
+		const { data: verses } = await supabase
+			.from("bible_verses")
+			.select("verse_number, text")
+			.eq("chapter_id", data.chapter_id)
+			.order("verse_number", { ascending: true });
+
+		// biome-ignore lint/suspicious/noExplicitAny: book join is loosely typed.
+		const book = (chapter as any).bible_books;
+		const bookCode = book?.paratext_code || "GEN";
+		const rows = (verses ?? [])
+			.map((v) => {
+				const t = (v.text ?? {}) as Record<string, string>;
+				return {
+					verse_number: v.verse_number,
+					text: t[data.language] ?? t.am ?? t.en ?? "",
+				};
+			})
+			.filter((r) => r.text.length > 0);
+		const json = buildChapterJson(
+			String(bookCode),
+			chapter.chapter_number,
+			rows,
+		);
+		return serialize({ usfm: jsonToUsfm(json) });
 	});

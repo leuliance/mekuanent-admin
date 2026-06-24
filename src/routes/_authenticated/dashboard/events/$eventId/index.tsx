@@ -35,6 +35,7 @@ import {
 import { ResponsiveTabs } from "@/components/responsive-tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Calendar as DayPickerCalendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -43,7 +44,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Calendar as DayPickerCalendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -102,53 +102,49 @@ export const Route = createFileRoute(
 // ============ LOADING SKELETON ============
 function EventDetailSkeleton() {
 	return (
-		<>
-			<div className="flex-1 overflow-auto p-6">
-				<div className="max-w-4xl mx-auto space-y-6">
-					<Skeleton className="h-8 w-32" />
-					<Skeleton className="h-64 w-full rounded-xl" />
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<Skeleton className="h-48 rounded-xl" />
-						<Skeleton className="h-48 rounded-xl" />
-					</div>
+		<div className="flex-1 overflow-auto p-6">
+			<div className="max-w-4xl mx-auto space-y-6">
+				<Skeleton className="h-8 w-32" />
+				<Skeleton className="h-64 w-full rounded-xl" />
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<Skeleton className="h-48 rounded-xl" />
+					<Skeleton className="h-48 rounded-xl" />
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }
 
 // ============ ERROR STATE ============
 function EventDetailError({ error }: { error: Error }) {
 	return (
-		<>
-			<div className="flex-1 flex items-center justify-center p-6">
-				<div className="text-center max-w-md">
-					<div className="mx-auto h-14 w-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-						<AlertCircle className="h-7 w-7 text-destructive" />
-					</div>
-					<h2 className="text-xl font-semibold mb-2">Failed to Load Event</h2>
-					<p className="text-muted-foreground mb-5">
-						{error.message || "An unexpected error occurred."}
-					</p>
-					<div className="flex gap-2 justify-center">
-						<Button
-							variant="outline"
-							render={
-								<Link
-									to="/dashboard/events"
-									search={{ page: 1, search: undefined }}
-								/>
-							}
-							nativeButton={false}
-						>
-							<ArrowLeft className="h-4 w-4 mr-2" />
-							Back to Events
-						</Button>
-						<Button onClick={() => window.location.reload()}>Try Again</Button>
-					</div>
+		<div className="flex-1 flex items-center justify-center p-6">
+			<div className="text-center max-w-md">
+				<div className="mx-auto h-14 w-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+					<AlertCircle className="h-7 w-7 text-destructive" />
+				</div>
+				<h2 className="text-xl font-semibold mb-2">Failed to Load Event</h2>
+				<p className="text-muted-foreground mb-5">
+					{error.message || "An unexpected error occurred."}
+				</p>
+				<div className="flex gap-2 justify-center">
+					<Button
+						variant="outline"
+						render={
+							<Link
+								to="/dashboard/events"
+								search={{ page: 1, search: undefined }}
+							/>
+						}
+						nativeButton={false}
+					>
+						<ArrowLeft className="h-4 w-4 mr-2" />
+						Back to Events
+					</Button>
+					<Button onClick={() => window.location.reload()}>Try Again</Button>
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }
 
@@ -170,15 +166,16 @@ function EventDetailPage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	// Edit form state
-	const [editTitle, setEditTitle] = useState<Record<string, string>>({});
-	const [editDescription, setEditDescription] = useState<
-		Record<string, string>
-	>({});
+	const [editTitle, setEditTitle] = useState("");
+	const [editDescription, setEditDescription] = useState("");
+	const [editLanguage, setEditLanguage] = useState<
+		"en" | "am" | "or" | "ti" | "so"
+	>("en");
 	const [editStartTime, setEditStartTime] = useState("");
 	const [editEndTime, setEditEndTime] = useState("");
 	const [editIsOnline, setEditIsOnline] = useState(false);
 	const [editMeetingUrl, setEditMeetingUrl] = useState("");
-	const [editAddress, setEditAddress] = useState<Record<string, string>>({});
+	const [editAddress, setEditAddress] = useState("");
 	const [editMaxAttendees, setEditMaxAttendees] = useState("");
 	const [editRsvpDeadline, setEditRsvpDeadline] = useState("");
 	const [eventTab, setEventTab] = useState("rsvps");
@@ -210,17 +207,10 @@ function EventDetailPage() {
 
 	// Initialize edit state when entering edit mode
 	const startEditing = () => {
-		const titleObj: Record<string, string> = {};
-		const descObj: Record<string, string> = {};
-		const addrObj: Record<string, string> = {};
-		for (const loc of LOCALES) {
-			titleObj[loc.value] = getLocalizedText(item.title, loc.value);
-			descObj[loc.value] = getLocalizedText(item.description, loc.value);
-			addrObj[loc.value] = getLocalizedText(item.address, loc.value);
-		}
-		setEditTitle(titleObj);
-		setEditDescription(descObj);
-		setEditAddress(addrObj);
+		setEditTitle(getLocalizedText(item.title, locale));
+		setEditDescription(getLocalizedText(item.description, locale));
+		setEditAddress(getLocalizedText(item.address, locale));
+		setEditLanguage((item.language as typeof editLanguage) || "en");
 		setEditStartTime(formatDateTimeLocal(item.start_time));
 		setEditEndTime(formatDateTimeLocal(item.end_time));
 		setEditIsOnline(item.is_online || false);
@@ -244,13 +234,12 @@ function EventDetailPage() {
 					id: item.id,
 					title: editTitle,
 					description: editDescription,
+					language: editLanguage,
 					start_time: new Date(editStartTime).toISOString(),
 					end_time: new Date(editEndTime).toISOString(),
 					is_online: editIsOnline,
 					meeting_url: editIsOnline ? editMeetingUrl || null : null,
-					address: Object.values(editAddress).some((v) => v.trim())
-						? editAddress
-						: null,
+					address: editAddress.trim() ? editAddress : null,
 					max_attendees: editMaxAttendees ? Number(editMaxAttendees) : null,
 					rsvp_deadline: editRsvpDeadline
 						? new Date(editRsvpDeadline).toISOString()
@@ -496,6 +485,8 @@ function EventDetailPage() {
 							setEditTitle={setEditTitle}
 							editDescription={editDescription}
 							setEditDescription={setEditDescription}
+							editLanguage={editLanguage}
+							setEditLanguage={setEditLanguage}
 							editStartTime={editStartTime}
 							setEditStartTime={setEditStartTime}
 							editEndTime={editEndTime}
@@ -732,6 +723,7 @@ function EventDetailPage() {
 										<EventRsvpTable rsvps={rsvps} />
 									</TabsContent>
 									<TabsContent value="donations" className="p-5 mt-0">
+										{/* biome-ignore lint/suspicious/noExplicitAny: serialized loader rows passed to the table */}
 										<EventDonationsTable donations={donations as any} />
 									</TabsContent>
 								</ResponsiveTabs>
@@ -844,11 +836,11 @@ function DateTimePopoverField({
 	const valid = !!(parsed && !Number.isNaN(parsed.getTime()));
 	const selectedDate = valid ? parsed : undefined;
 	const timeValue = valid
-		? `${String(parsed!.getHours()).padStart(2, "0")}:${String(parsed!.getMinutes()).padStart(2, "0")}`
+		? `${String(parsed?.getHours()).padStart(2, "0")}:${String(parsed?.getMinutes()).padStart(2, "0")}`
 		: "12:00";
 
 	const displayLabel = valid
-		? parsed!.toLocaleString(undefined, {
+		? parsed?.toLocaleString(undefined, {
 				dateStyle: "medium",
 				timeStyle: "short",
 			})
@@ -856,7 +848,7 @@ function DateTimePopoverField({
 			? "No deadline"
 			: "Pick date and time";
 
-	const baseDateForTime = valid ? parsed! : new Date();
+	const baseDateForTime = valid && parsed ? parsed : new Date();
 
 	return (
 		<div className="space-y-1.5">
@@ -924,6 +916,8 @@ function EditEventForm({
 	setEditTitle,
 	editDescription,
 	setEditDescription,
+	editLanguage,
+	setEditLanguage,
 	editStartTime,
 	setEditStartTime,
 	editEndTime,
@@ -939,11 +933,13 @@ function EditEventForm({
 	editRsvpDeadline,
 	setEditRsvpDeadline,
 }: {
-	editTitle: Record<string, string>;
-	setEditTitle: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-	editDescription: Record<string, string>;
-	setEditDescription: React.Dispatch<
-		React.SetStateAction<Record<string, string>>
+	editTitle: string;
+	setEditTitle: React.Dispatch<React.SetStateAction<string>>;
+	editDescription: string;
+	setEditDescription: React.Dispatch<React.SetStateAction<string>>;
+	editLanguage: "en" | "am" | "or" | "ti" | "so";
+	setEditLanguage: React.Dispatch<
+		React.SetStateAction<"en" | "am" | "or" | "ti" | "so">
 	>;
 	editStartTime: string;
 	setEditStartTime: React.Dispatch<React.SetStateAction<string>>;
@@ -953,8 +949,8 @@ function EditEventForm({
 	setEditIsOnline: React.Dispatch<React.SetStateAction<boolean>>;
 	editMeetingUrl: string;
 	setEditMeetingUrl: React.Dispatch<React.SetStateAction<string>>;
-	editAddress: Record<string, string>;
-	setEditAddress: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+	editAddress: string;
+	setEditAddress: React.Dispatch<React.SetStateAction<string>>;
 	editMaxAttendees: string;
 	setEditMaxAttendees: React.Dispatch<React.SetStateAction<string>>;
 	editRsvpDeadline: string;
@@ -962,53 +958,51 @@ function EditEventForm({
 }) {
 	return (
 		<div className="space-y-4">
-			{/* Title */}
+			{/* Title & Language */}
 			<div className="rounded-xl border bg-card p-5">
 				<h2 className="text-sm font-semibold mb-3">Title</h2>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-					{LOCALES.slice(0, 2).map((loc) => (
-						<div key={loc.value} className="space-y-1.5">
-							<Label className="text-xs">
-								{loc.label}{" "}
-								{loc.value === "en" || loc.value === "am" ? "*" : ""}
-							</Label>
-							<Input
-								value={editTitle[loc.value] || ""}
-								onChange={(e) =>
-									setEditTitle((prev) => ({
-										...prev,
-										[loc.value]: e.target.value,
-									}))
-								}
-								placeholder={`Title in ${loc.label}`}
-							/>
-						</div>
-					))}
+					<div className="space-y-1.5">
+						<Label className="text-xs">Title *</Label>
+						<Input
+							value={editTitle}
+							onChange={(e) => setEditTitle(e.target.value)}
+							placeholder="Event title"
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label className="text-xs">Language *</Label>
+						<Select
+							value={editLanguage}
+							onValueChange={(v) =>
+								setEditLanguage((v || "en") as "en" | "am" | "or" | "ti" | "so")
+							}
+						>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{LOCALES.map((loc) => (
+									<SelectItem key={loc.value} value={loc.value}>
+										{loc.nativeLabel}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 				</div>
 			</div>
 
 			{/* Description */}
 			<div className="rounded-xl border bg-card p-5">
 				<h2 className="text-sm font-semibold mb-3">Description</h2>
-				<div className="grid grid-cols-1 gap-3">
-					{LOCALES.slice(0, 2).map((loc) => (
-						<div key={loc.value} className="space-y-1.5">
-							<Label className="text-xs">{loc.label}</Label>
-							<textarea
-								value={editDescription[loc.value] || ""}
-								onChange={(e) =>
-									setEditDescription((prev) => ({
-										...prev,
-										[loc.value]: e.target.value,
-									}))
-								}
-								placeholder={`Description in ${loc.label}`}
-								rows={3}
-								className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-							/>
-						</div>
-					))}
-				</div>
+				<textarea
+					value={editDescription}
+					onChange={(e) => setEditDescription(e.target.value)}
+					placeholder="Event description"
+					rows={4}
+					className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				/>
 			</div>
 
 			{/* Date & Time */}
@@ -1060,22 +1054,13 @@ function EditEventForm({
 						/>
 					</div>
 				) : (
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-						{LOCALES.slice(0, 2).map((loc) => (
-							<div key={loc.value} className="space-y-1.5">
-								<Label className="text-xs">Address ({loc.label})</Label>
-								<Input
-									value={editAddress[loc.value] || ""}
-									onChange={(e) =>
-										setEditAddress((prev) => ({
-											...prev,
-											[loc.value]: e.target.value,
-										}))
-									}
-									placeholder={`Address in ${loc.label}`}
-								/>
-							</div>
-						))}
+					<div className="space-y-1.5">
+						<Label className="text-xs">Address</Label>
+						<Input
+							value={editAddress}
+							onChange={(e) => setEditAddress(e.target.value)}
+							placeholder="Event address"
+						/>
 					</div>
 				)}
 			</div>

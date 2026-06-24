@@ -15,8 +15,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedDashboardUsersIndexRouteImport } from './routes/_authenticated/dashboard/users/index'
 import { Route as AuthenticatedDashboardSettingsIndexRouteImport } from './routes/_authenticated/dashboard/settings/index'
+import { Route as AuthenticatedDashboardReportsIndexRouteImport } from './routes/_authenticated/dashboard/reports/index'
 import { Route as AuthenticatedDashboardPaymentsIndexRouteImport } from './routes/_authenticated/dashboard/payments/index'
 import { Route as AuthenticatedDashboardNotificationsIndexRouteImport } from './routes/_authenticated/dashboard/notifications/index'
+import { Route as AuthenticatedDashboardFastingIndexRouteImport } from './routes/_authenticated/dashboard/fasting/index'
 import { Route as AuthenticatedDashboardEventsIndexRouteImport } from './routes/_authenticated/dashboard/events/index'
 import { Route as AuthenticatedDashboardDonationsIndexRouteImport } from './routes/_authenticated/dashboard/donations/index'
 import { Route as AuthenticatedDashboardContentIndexRouteImport } from './routes/_authenticated/dashboard/content/index'
@@ -25,6 +27,8 @@ import { Route as AuthenticatedDashboardCategoriesIndexRouteImport } from './rou
 import { Route as AuthenticatedDashboardCampaignsIndexRouteImport } from './routes/_authenticated/dashboard/campaigns/index'
 import { Route as AuthenticatedDashboardBibleIndexRouteImport } from './routes/_authenticated/dashboard/bible/index'
 import { Route as AuthenticatedDashboardUsersUserIdIndexRouteImport } from './routes/_authenticated/dashboard/users/$userId/index'
+import { Route as AuthenticatedDashboardReportsReportIdIndexRouteImport } from './routes/_authenticated/dashboard/reports/$reportId/index'
+import { Route as AuthenticatedDashboardFastingFastingIdIndexRouteImport } from './routes/_authenticated/dashboard/fasting/$fastingId/index'
 import { Route as AuthenticatedDashboardEventsEventIdIndexRouteImport } from './routes/_authenticated/dashboard/events/$eventId/index'
 import { Route as AuthenticatedDashboardContentNewIndexRouteImport } from './routes/_authenticated/dashboard/content/new/index'
 import { Route as AuthenticatedDashboardContentContentIdIndexRouteImport } from './routes/_authenticated/dashboard/content/$contentId/index'
@@ -65,6 +69,12 @@ const AuthenticatedDashboardSettingsIndexRoute =
     path: '/dashboard/settings/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDashboardReportsIndexRoute =
+  AuthenticatedDashboardReportsIndexRouteImport.update({
+    id: '/dashboard/reports/',
+    path: '/dashboard/reports/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDashboardPaymentsIndexRoute =
   AuthenticatedDashboardPaymentsIndexRouteImport.update({
     id: '/dashboard/payments/',
@@ -75,6 +85,12 @@ const AuthenticatedDashboardNotificationsIndexRoute =
   AuthenticatedDashboardNotificationsIndexRouteImport.update({
     id: '/dashboard/notifications/',
     path: '/dashboard/notifications/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDashboardFastingIndexRoute =
+  AuthenticatedDashboardFastingIndexRouteImport.update({
+    id: '/dashboard/fasting/',
+    path: '/dashboard/fasting/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDashboardEventsIndexRoute =
@@ -123,6 +139,18 @@ const AuthenticatedDashboardUsersUserIdIndexRoute =
   AuthenticatedDashboardUsersUserIdIndexRouteImport.update({
     id: '/dashboard/users/$userId/',
     path: '/dashboard/users/$userId/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDashboardReportsReportIdIndexRoute =
+  AuthenticatedDashboardReportsReportIdIndexRouteImport.update({
+    id: '/dashboard/reports/$reportId/',
+    path: '/dashboard/reports/$reportId/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDashboardFastingFastingIdIndexRoute =
+  AuthenticatedDashboardFastingFastingIdIndexRouteImport.update({
+    id: '/dashboard/fasting/$fastingId/',
+    path: '/dashboard/fasting/$fastingId/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDashboardEventsEventIdIndexRoute =
@@ -179,8 +207,10 @@ export interface FileRoutesByFullPath {
   '/dashboard/content/': typeof AuthenticatedDashboardContentIndexRoute
   '/dashboard/donations/': typeof AuthenticatedDashboardDonationsIndexRoute
   '/dashboard/events/': typeof AuthenticatedDashboardEventsIndexRoute
+  '/dashboard/fasting/': typeof AuthenticatedDashboardFastingIndexRoute
   '/dashboard/notifications/': typeof AuthenticatedDashboardNotificationsIndexRoute
   '/dashboard/payments/': typeof AuthenticatedDashboardPaymentsIndexRoute
+  '/dashboard/reports/': typeof AuthenticatedDashboardReportsIndexRoute
   '/dashboard/settings/': typeof AuthenticatedDashboardSettingsIndexRoute
   '/dashboard/users/': typeof AuthenticatedDashboardUsersIndexRoute
   '/dashboard/bible/$bookId/': typeof AuthenticatedDashboardBibleBookIdIndexRoute
@@ -189,6 +219,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/content/$contentId/': typeof AuthenticatedDashboardContentContentIdIndexRoute
   '/dashboard/content/new/': typeof AuthenticatedDashboardContentNewIndexRoute
   '/dashboard/events/$eventId/': typeof AuthenticatedDashboardEventsEventIdIndexRoute
+  '/dashboard/fasting/$fastingId/': typeof AuthenticatedDashboardFastingFastingIdIndexRoute
+  '/dashboard/reports/$reportId/': typeof AuthenticatedDashboardReportsReportIdIndexRoute
   '/dashboard/users/$userId/': typeof AuthenticatedDashboardUsersUserIdIndexRoute
   '/dashboard/bible/$bookId/$chapterId/': typeof AuthenticatedDashboardBibleBookIdChapterIdIndexRoute
 }
@@ -203,8 +235,10 @@ export interface FileRoutesByTo {
   '/dashboard/content': typeof AuthenticatedDashboardContentIndexRoute
   '/dashboard/donations': typeof AuthenticatedDashboardDonationsIndexRoute
   '/dashboard/events': typeof AuthenticatedDashboardEventsIndexRoute
+  '/dashboard/fasting': typeof AuthenticatedDashboardFastingIndexRoute
   '/dashboard/notifications': typeof AuthenticatedDashboardNotificationsIndexRoute
   '/dashboard/payments': typeof AuthenticatedDashboardPaymentsIndexRoute
+  '/dashboard/reports': typeof AuthenticatedDashboardReportsIndexRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsIndexRoute
   '/dashboard/users': typeof AuthenticatedDashboardUsersIndexRoute
   '/dashboard/bible/$bookId': typeof AuthenticatedDashboardBibleBookIdIndexRoute
@@ -213,6 +247,8 @@ export interface FileRoutesByTo {
   '/dashboard/content/$contentId': typeof AuthenticatedDashboardContentContentIdIndexRoute
   '/dashboard/content/new': typeof AuthenticatedDashboardContentNewIndexRoute
   '/dashboard/events/$eventId': typeof AuthenticatedDashboardEventsEventIdIndexRoute
+  '/dashboard/fasting/$fastingId': typeof AuthenticatedDashboardFastingFastingIdIndexRoute
+  '/dashboard/reports/$reportId': typeof AuthenticatedDashboardReportsReportIdIndexRoute
   '/dashboard/users/$userId': typeof AuthenticatedDashboardUsersUserIdIndexRoute
   '/dashboard/bible/$bookId/$chapterId': typeof AuthenticatedDashboardBibleBookIdChapterIdIndexRoute
 }
@@ -229,8 +265,10 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/content/': typeof AuthenticatedDashboardContentIndexRoute
   '/_authenticated/dashboard/donations/': typeof AuthenticatedDashboardDonationsIndexRoute
   '/_authenticated/dashboard/events/': typeof AuthenticatedDashboardEventsIndexRoute
+  '/_authenticated/dashboard/fasting/': typeof AuthenticatedDashboardFastingIndexRoute
   '/_authenticated/dashboard/notifications/': typeof AuthenticatedDashboardNotificationsIndexRoute
   '/_authenticated/dashboard/payments/': typeof AuthenticatedDashboardPaymentsIndexRoute
+  '/_authenticated/dashboard/reports/': typeof AuthenticatedDashboardReportsIndexRoute
   '/_authenticated/dashboard/settings/': typeof AuthenticatedDashboardSettingsIndexRoute
   '/_authenticated/dashboard/users/': typeof AuthenticatedDashboardUsersIndexRoute
   '/_authenticated/dashboard/bible/$bookId/': typeof AuthenticatedDashboardBibleBookIdIndexRoute
@@ -239,6 +277,8 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/content/$contentId/': typeof AuthenticatedDashboardContentContentIdIndexRoute
   '/_authenticated/dashboard/content/new/': typeof AuthenticatedDashboardContentNewIndexRoute
   '/_authenticated/dashboard/events/$eventId/': typeof AuthenticatedDashboardEventsEventIdIndexRoute
+  '/_authenticated/dashboard/fasting/$fastingId/': typeof AuthenticatedDashboardFastingFastingIdIndexRoute
+  '/_authenticated/dashboard/reports/$reportId/': typeof AuthenticatedDashboardReportsReportIdIndexRoute
   '/_authenticated/dashboard/users/$userId/': typeof AuthenticatedDashboardUsersUserIdIndexRoute
   '/_authenticated/dashboard/bible/$bookId/$chapterId/': typeof AuthenticatedDashboardBibleBookIdChapterIdIndexRoute
 }
@@ -255,8 +295,10 @@ export interface FileRouteTypes {
     | '/dashboard/content/'
     | '/dashboard/donations/'
     | '/dashboard/events/'
+    | '/dashboard/fasting/'
     | '/dashboard/notifications/'
     | '/dashboard/payments/'
+    | '/dashboard/reports/'
     | '/dashboard/settings/'
     | '/dashboard/users/'
     | '/dashboard/bible/$bookId/'
@@ -265,6 +307,8 @@ export interface FileRouteTypes {
     | '/dashboard/content/$contentId/'
     | '/dashboard/content/new/'
     | '/dashboard/events/$eventId/'
+    | '/dashboard/fasting/$fastingId/'
+    | '/dashboard/reports/$reportId/'
     | '/dashboard/users/$userId/'
     | '/dashboard/bible/$bookId/$chapterId/'
   fileRoutesByTo: FileRoutesByTo
@@ -279,8 +323,10 @@ export interface FileRouteTypes {
     | '/dashboard/content'
     | '/dashboard/donations'
     | '/dashboard/events'
+    | '/dashboard/fasting'
     | '/dashboard/notifications'
     | '/dashboard/payments'
+    | '/dashboard/reports'
     | '/dashboard/settings'
     | '/dashboard/users'
     | '/dashboard/bible/$bookId'
@@ -289,6 +335,8 @@ export interface FileRouteTypes {
     | '/dashboard/content/$contentId'
     | '/dashboard/content/new'
     | '/dashboard/events/$eventId'
+    | '/dashboard/fasting/$fastingId'
+    | '/dashboard/reports/$reportId'
     | '/dashboard/users/$userId'
     | '/dashboard/bible/$bookId/$chapterId'
   id:
@@ -304,8 +352,10 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/content/'
     | '/_authenticated/dashboard/donations/'
     | '/_authenticated/dashboard/events/'
+    | '/_authenticated/dashboard/fasting/'
     | '/_authenticated/dashboard/notifications/'
     | '/_authenticated/dashboard/payments/'
+    | '/_authenticated/dashboard/reports/'
     | '/_authenticated/dashboard/settings/'
     | '/_authenticated/dashboard/users/'
     | '/_authenticated/dashboard/bible/$bookId/'
@@ -314,6 +364,8 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/content/$contentId/'
     | '/_authenticated/dashboard/content/new/'
     | '/_authenticated/dashboard/events/$eventId/'
+    | '/_authenticated/dashboard/fasting/$fastingId/'
+    | '/_authenticated/dashboard/reports/$reportId/'
     | '/_authenticated/dashboard/users/$userId/'
     | '/_authenticated/dashboard/bible/$bookId/$chapterId/'
   fileRoutesById: FileRoutesById
@@ -368,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dashboard/reports/': {
+      id: '/_authenticated/dashboard/reports/'
+      path: '/dashboard/reports'
+      fullPath: '/dashboard/reports/'
+      preLoaderRoute: typeof AuthenticatedDashboardReportsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard/payments/': {
       id: '/_authenticated/dashboard/payments/'
       path: '/dashboard/payments'
@@ -380,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard/notifications'
       fullPath: '/dashboard/notifications/'
       preLoaderRoute: typeof AuthenticatedDashboardNotificationsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard/fasting/': {
+      id: '/_authenticated/dashboard/fasting/'
+      path: '/dashboard/fasting'
+      fullPath: '/dashboard/fasting/'
+      preLoaderRoute: typeof AuthenticatedDashboardFastingIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard/events/': {
@@ -436,6 +502,20 @@ declare module '@tanstack/react-router' {
       path: '/dashboard/users/$userId'
       fullPath: '/dashboard/users/$userId/'
       preLoaderRoute: typeof AuthenticatedDashboardUsersUserIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard/reports/$reportId/': {
+      id: '/_authenticated/dashboard/reports/$reportId/'
+      path: '/dashboard/reports/$reportId'
+      fullPath: '/dashboard/reports/$reportId/'
+      preLoaderRoute: typeof AuthenticatedDashboardReportsReportIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard/fasting/$fastingId/': {
+      id: '/_authenticated/dashboard/fasting/$fastingId/'
+      path: '/dashboard/fasting/$fastingId'
+      fullPath: '/dashboard/fasting/$fastingId/'
+      preLoaderRoute: typeof AuthenticatedDashboardFastingFastingIdIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard/events/$eventId/': {
@@ -499,8 +579,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardContentIndexRoute: typeof AuthenticatedDashboardContentIndexRoute
   AuthenticatedDashboardDonationsIndexRoute: typeof AuthenticatedDashboardDonationsIndexRoute
   AuthenticatedDashboardEventsIndexRoute: typeof AuthenticatedDashboardEventsIndexRoute
+  AuthenticatedDashboardFastingIndexRoute: typeof AuthenticatedDashboardFastingIndexRoute
   AuthenticatedDashboardNotificationsIndexRoute: typeof AuthenticatedDashboardNotificationsIndexRoute
   AuthenticatedDashboardPaymentsIndexRoute: typeof AuthenticatedDashboardPaymentsIndexRoute
+  AuthenticatedDashboardReportsIndexRoute: typeof AuthenticatedDashboardReportsIndexRoute
   AuthenticatedDashboardSettingsIndexRoute: typeof AuthenticatedDashboardSettingsIndexRoute
   AuthenticatedDashboardUsersIndexRoute: typeof AuthenticatedDashboardUsersIndexRoute
   AuthenticatedDashboardBibleBookIdIndexRoute: typeof AuthenticatedDashboardBibleBookIdIndexRoute
@@ -509,6 +591,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardContentContentIdIndexRoute: typeof AuthenticatedDashboardContentContentIdIndexRoute
   AuthenticatedDashboardContentNewIndexRoute: typeof AuthenticatedDashboardContentNewIndexRoute
   AuthenticatedDashboardEventsEventIdIndexRoute: typeof AuthenticatedDashboardEventsEventIdIndexRoute
+  AuthenticatedDashboardFastingFastingIdIndexRoute: typeof AuthenticatedDashboardFastingFastingIdIndexRoute
+  AuthenticatedDashboardReportsReportIdIndexRoute: typeof AuthenticatedDashboardReportsReportIdIndexRoute
   AuthenticatedDashboardUsersUserIdIndexRoute: typeof AuthenticatedDashboardUsersUserIdIndexRoute
   AuthenticatedDashboardBibleBookIdChapterIdIndexRoute: typeof AuthenticatedDashboardBibleBookIdChapterIdIndexRoute
 }
@@ -528,10 +612,14 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedDashboardDonationsIndexRoute,
   AuthenticatedDashboardEventsIndexRoute:
     AuthenticatedDashboardEventsIndexRoute,
+  AuthenticatedDashboardFastingIndexRoute:
+    AuthenticatedDashboardFastingIndexRoute,
   AuthenticatedDashboardNotificationsIndexRoute:
     AuthenticatedDashboardNotificationsIndexRoute,
   AuthenticatedDashboardPaymentsIndexRoute:
     AuthenticatedDashboardPaymentsIndexRoute,
+  AuthenticatedDashboardReportsIndexRoute:
+    AuthenticatedDashboardReportsIndexRoute,
   AuthenticatedDashboardSettingsIndexRoute:
     AuthenticatedDashboardSettingsIndexRoute,
   AuthenticatedDashboardUsersIndexRoute: AuthenticatedDashboardUsersIndexRoute,
@@ -547,6 +635,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedDashboardContentNewIndexRoute,
   AuthenticatedDashboardEventsEventIdIndexRoute:
     AuthenticatedDashboardEventsEventIdIndexRoute,
+  AuthenticatedDashboardFastingFastingIdIndexRoute:
+    AuthenticatedDashboardFastingFastingIdIndexRoute,
+  AuthenticatedDashboardReportsReportIdIndexRoute:
+    AuthenticatedDashboardReportsReportIdIndexRoute,
   AuthenticatedDashboardUsersUserIdIndexRoute:
     AuthenticatedDashboardUsersUserIdIndexRoute,
   AuthenticatedDashboardBibleBookIdChapterIdIndexRoute:

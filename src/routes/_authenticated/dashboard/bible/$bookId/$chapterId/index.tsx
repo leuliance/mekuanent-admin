@@ -13,7 +13,9 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	ChevronUp,
+	Copy,
 	Edit2,
+	FileCode2,
 	FileText,
 	Link2,
 	Loader2,
@@ -43,15 +45,19 @@ import {
 	deleteBibleCrossReference,
 	deleteBibleFootnote,
 	deleteBibleVerse,
+	exportChapterUsfm,
 	getBibleBooks,
 	getBibleChapter,
 	getBibleChapters,
 	getBibleCrossReferences,
 	getBibleFootnotes,
+	getBibleTranslations,
 	getBibleVerses,
+	importChapterUsfm,
 	updateBibleFootnote,
 	updateBibleVerse,
 } from "@/api/bible";
+import { UsfmEditor } from "@/components/bible/usfm-editor";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -79,6 +85,7 @@ const createVerseSchema = z.object({
 	verse_number: z.number().min(1, "Verse number is required"),
 	text_en: z.string().min(1, "English text is required"),
 	text_am: z.string(),
+	text_gez: z.string(),
 });
 
 // Validation schema for creating a footnote
@@ -136,20 +143,22 @@ export const Route = createFileRoute(
 	}),
 	loaderDeps: ({ search }) => search,
 	loader: async ({ params, deps }) => {
-		const [chapter, versesData, bookChaptersData] = await Promise.all([
-			getBibleChapter({ data: { id: params.chapterId } }),
-			getBibleVerses({
-				data: {
-					chapterId: params.chapterId,
-					page: deps.page,
-					limit: 200,
-					search: deps.search,
-				},
-			}),
-			getBibleChapters({
-				data: { bookId: params.bookId, page: 1, limit: 200 },
-			}),
-		]);
+		const [chapter, versesData, bookChaptersData, translations] =
+			await Promise.all([
+				getBibleChapter({ data: { id: params.chapterId } }),
+				getBibleVerses({
+					data: {
+						chapterId: params.chapterId,
+						page: deps.page,
+						limit: 200,
+						search: deps.search,
+					},
+				}),
+				getBibleChapters({
+					data: { bookId: params.bookId, page: 1, limit: 200 },
+				}),
+				getBibleTranslations(),
+			]);
 		const chaptersSorted = [
 			...(bookChaptersData.chapters as BibleChapter[]),
 		].sort((a, b) => a.chapter_number - b.chapter_number);
@@ -162,6 +171,7 @@ export const Route = createFileRoute(
 		return {
 			chapter,
 			...versesData,
+			translations,
 			prevChapterId: prevChapter?.id ?? null,
 			nextChapterId: nextChapter?.id ?? null,
 			prevChapterNumber: prevChapter?.chapter_number ?? null,
@@ -304,11 +314,22 @@ function ChapterDetailPage() {
 		total,
 		page,
 		totalPages,
+		translations,
 		prevChapterId,
 		nextChapterId,
 		prevChapterNumber,
 		nextChapterNumber,
 	} = Route.useLoaderData();
+	const bibleTranslations = (translations ?? []) as Array<{
+		code: string;
+		name: unknown;
+		short_label: string | null;
+		is_default: boolean;
+	}>;
+	const defaultLang =
+		bibleTranslations.find((t) => t.is_default)?.code ??
+		bibleTranslations[0]?.code ??
+		"am";
 	const { bookId, chapterId } = Route.useParams();
 	const { search } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
@@ -323,6 +344,7 @@ function ChapterDetailPage() {
 	const [editingVerse, setEditingVerse] = useState<BibleVerse | null>(null);
 	const [editTextEn, setEditTextEn] = useState("");
 	const [editTextAm, setEditTextAm] = useState("");
+	const [editTextGez, setEditTextGez] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
 	// Create verse state
@@ -331,6 +353,13 @@ function ChapterDetailPage() {
 	const [bulkImportOpen, setBulkImportOpen] = useState(false);
 	const [bulkPaste, setBulkPaste] = useState("");
 	const [isBulkImporting, setIsBulkImporting] = useState(false);
+
+	// USFM editor state
+	const [usfmOpen, setUsfmOpen] = useState(false);
+	const [usfmText, setUsfmText] = useState("");
+	const [usfmLanguage, setUsfmLanguage] = useState<string>(defaultLang);
+	const [isImportingUsfm, setIsImportingUsfm] = useState(false);
+	const [isExportingUsfm, setIsExportingUsfm] = useState(false);
 
 	// Footnotes state
 	const [expandedVerse, setExpandedVerse] = useState<string | null>(null);
@@ -382,6 +411,7 @@ function ChapterDetailPage() {
 			verse_number: (typedVerses.length || 0) + 1,
 			text_en: "",
 			text_am: "",
+			text_gez: "",
 		},
 		validators: {
 			onChange: createVerseSchema,
@@ -396,6 +426,7 @@ function ChapterDetailPage() {
 						text: {
 							en: value.text_en,
 							am: value.text_am || undefined,
+							gez: value.text_gez || undefined,
 						},
 					},
 				});
@@ -631,15 +662,18 @@ function ChapterDetailPage() {
 
 	const getLocalizedName = (name: unknown): string => {
 		if (typeof name === "object" && name !== null) {
-			const nameObj = name as { en?: string; am?: string };
-			return nameObj.en || nameObj.am || "Unknown";
+			const nameObj = name as Record<string, string>;
+			return nameObj.en || nameObj.am || nameObj.gez || "Unknown";
 		}
 		return String(name || "Unknown");
 	};
 
-	const getLocalizedText = (text: unknown, lang: "en" | "am"): string => {
+	const getLocalizedText = (
+		text: unknown,
+		lang: "en" | "am" | "gez",
+	): string => {
 		if (typeof text === "object" && text !== null) {
-			const textObj = text as { en?: string; am?: string };
+			const textObj = text as Record<string, string>;
 			return textObj[lang] || "";
 		}
 		return String(text || "");
@@ -687,6 +721,59 @@ function ChapterDetailPage() {
 		}
 	};
 
+	const handleImportUsfm = async () => {
+		if (!usfmText.trim()) {
+			toast.error("Write or paste USFM first");
+			return;
+		}
+		// Client-side validation before persisting.
+		const { parseUsfmString } = await import("@/lib/usfm");
+		const { verses: parsedVerses, warnings } = parseUsfmString(usfmText);
+		if (parsedVerses.length === 0) {
+			toast.error("No \\v verses detected — nothing to save");
+			return;
+		}
+		const dup = warnings.find((w) => w.toLowerCase().includes("duplicate"));
+		if (dup) {
+			toast.error(dup);
+			return;
+		}
+		setIsImportingUsfm(true);
+		try {
+			const res = (await importChapterUsfm({
+				data: {
+					chapter_id: chapterId,
+					usfm: usfmText,
+					language: usfmLanguage,
+					replace: true,
+				},
+			})) as { count: number };
+			toast.success(`Saved ${res.count} verse(s) from USFM`);
+			setUsfmOpen(false);
+			setUsfmText("");
+			router.invalidate();
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "USFM import failed");
+		} finally {
+			setIsImportingUsfm(false);
+		}
+	};
+
+	const handleExportUsfm = async () => {
+		setIsExportingUsfm(true);
+		try {
+			const res = (await exportChapterUsfm({
+				data: { chapter_id: chapterId, language: usfmLanguage },
+			})) as { usfm: string };
+			setUsfmText(res.usfm);
+			toast.success("Loaded USFM from this chapter");
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "USFM export failed");
+		} finally {
+			setIsExportingUsfm(false);
+		}
+	};
+
 	const handleSearch = () => {
 		navigate({
 			search: { page: 1, search: searchInput },
@@ -722,12 +809,14 @@ function ChapterDetailPage() {
 		setEditingVerse(verse);
 		setEditTextEn(getLocalizedText(verse.text, "en"));
 		setEditTextAm(getLocalizedText(verse.text, "am"));
+		setEditTextGez(getLocalizedText(verse.text, "gez"));
 	};
 
 	const handleEditCancel = () => {
 		setEditingVerse(null);
 		setEditTextEn("");
 		setEditTextAm("");
+		setEditTextGez("");
 	};
 
 	const handleEditSave = async () => {
@@ -740,6 +829,7 @@ function ChapterDetailPage() {
 					text: {
 						en: editTextEn,
 						am: editTextAm || undefined,
+						gez: editTextGez || undefined,
 					},
 				},
 			});
@@ -774,9 +864,7 @@ function ChapterDetailPage() {
 					nativeButton={false}
 				>
 					<ArrowLeft className="size-4 shrink-0" />
-					<span className="min-w-0 break-words">
-						Back to {bookName}
-					</span>
+					<span className="min-w-0 wrap-break-word">Back to {bookName}</span>
 				</Button>
 
 				{/* Chapter Info */}
@@ -839,6 +927,14 @@ function ChapterDetailPage() {
 						</div>
 					</div>
 					<div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:shrink-0">
+						<Button
+							variant="outline"
+							className="w-full sm:w-auto"
+							onClick={() => setUsfmOpen(true)}
+						>
+							<FileCode2 className="w-4 h-4 mr-2" />
+							USFM
+						</Button>
 						<Button
 							variant="outline"
 							className="w-full sm:w-auto"
@@ -935,6 +1031,21 @@ function ChapterDetailPage() {
 																rows={3}
 															/>
 														</div>
+														<div>
+															<Label
+																htmlFor="text-gez"
+																className="text-xs text-muted-foreground"
+															>
+																Ge'ez
+															</Label>
+															<Textarea
+																id="text-gez"
+																value={editTextGez}
+																onChange={(e) => setEditTextGez(e.target.value)}
+																className="mt-1"
+																rows={3}
+															/>
+														</div>
 													</div>
 												</div>
 												<div className="flex justify-end gap-2">
@@ -979,6 +1090,11 @@ function ChapterDetailPage() {
 														{getLocalizedText(verse.text, "am") && (
 															<p className="text-muted-foreground mt-2 text-sm">
 																{getLocalizedText(verse.text, "am")}
+															</p>
+														)}
+														{getLocalizedText(verse.text, "gez") && (
+															<p className="text-muted-foreground mt-1 text-sm italic">
+																{getLocalizedText(verse.text, "gez")}
 															</p>
 														)}
 													</div>
@@ -1162,9 +1278,7 @@ function ChapterDetailPage() {
 																				const verseRange =
 																					ref.ref_verse_end != null
 																						? `${ref.ref_verse_start ?? ""}-${ref.ref_verse_end}`
-																						: String(
-																								ref.ref_verse_start ?? "",
-																							);
+																						: String(ref.ref_verse_start ?? "");
 																				return (
 																					<div
 																						key={ref.id}
@@ -1307,7 +1421,7 @@ function ChapterDetailPage() {
 										min={1}
 										value={field.state.value}
 										onChange={(e) =>
-											field.handleChange(parseInt(e.target.value) || 1)
+											field.handleChange(parseInt(e.target.value, 10) || 1)
 										}
 									/>
 									{field.state.meta.errors?.length > 0 && (
@@ -1344,6 +1458,20 @@ function ChapterDetailPage() {
 									<Label htmlFor="text_am">Amharic Text</Label>
 									<Textarea
 										id="text_am"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										rows={4}
+									/>
+								</div>
+							)}
+						</createVerseForm.Field>
+
+						<createVerseForm.Field name="text_gez">
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="text_gez">Ge'ez Text</Label>
+									<Textarea
+										id="text_gez"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										rows={4}
@@ -1426,6 +1554,91 @@ function ChapterDetailPage() {
 								</>
 							) : (
 								"Import"
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* USFM editor */}
+			<Dialog open={usfmOpen} onOpenChange={setUsfmOpen}>
+				<DialogContent className="w-[96vw] sm:max-w-[1200px] max-h-[92vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>
+							USFM Editor — {bookName} Chapter {typedChapter.chapter_number}
+						</DialogTitle>
+						<DialogDescription>
+							Write USFM on the left with the marker toolbar; the formatted
+							preview updates live. Saving derives verse text for the selected
+							language (footnotes and cross-references are kept out of the verse
+							body). Parsing runs on usfm-js, which is Cloudflare-safe.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="flex flex-wrap items-center gap-2 pb-1">
+						<Label className="text-xs">Language</Label>
+						<Select
+							value={usfmLanguage}
+							onValueChange={(v) => setUsfmLanguage(v ?? defaultLang)}
+						>
+							<SelectTrigger className="w-40">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{bibleTranslations.map((t) => (
+									<SelectItem key={t.code} value={t.code}>
+										{getLocalizedText(t.name, "en") || t.code}
+										{t.short_label ? ` (${t.short_label})` : ""}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<div className="ml-auto flex gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleExportUsfm}
+								disabled={isExportingUsfm}
+							>
+								{isExportingUsfm ? (
+									<Loader2 className="w-4 h-4 mr-1 animate-spin" />
+								) : (
+									<FileCode2 className="w-4 h-4 mr-1" />
+								)}
+								Load from chapter
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									navigator.clipboard?.writeText(usfmText);
+									toast.success("Copied");
+								}}
+								disabled={!usfmText}
+							>
+								<Copy className="w-4 h-4 mr-1" />
+								Copy
+							</Button>
+						</div>
+					</div>
+
+					<UsfmEditor value={usfmText} onChange={setUsfmText} />
+
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setUsfmOpen(false)}>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleImportUsfm}
+							disabled={isImportingUsfm || !usfmText.trim()}
+						>
+							{isImportingUsfm ? (
+								<>
+									<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+									Saving...
+								</>
+							) : (
+								"Save verses"
 							)}
 						</Button>
 					</DialogFooter>
@@ -1712,7 +1925,7 @@ function ChapterDetailPage() {
 										min={1}
 										value={field.state.value}
 										onChange={(e) =>
-											field.handleChange(parseInt(e.target.value) || 1)
+											field.handleChange(parseInt(e.target.value, 10) || 1)
 										}
 									/>
 									{field.state.meta.errors?.length > 0 && (
@@ -1735,7 +1948,7 @@ function ChapterDetailPage() {
 											min={1}
 											value={field.state.value}
 											onChange={(e) =>
-												field.handleChange(parseInt(e.target.value) || 1)
+												field.handleChange(parseInt(e.target.value, 10) || 1)
 											}
 										/>
 										{field.state.meta.errors?.length > 0 && (
@@ -1758,7 +1971,7 @@ function ChapterDetailPage() {
 											value={field.state.value || ""}
 											onChange={(e) => {
 												const val = e.target.value
-													? parseInt(e.target.value)
+													? parseInt(e.target.value, 10)
 													: 0;
 												field.handleChange(val);
 											}}

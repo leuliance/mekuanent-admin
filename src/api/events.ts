@@ -32,13 +32,14 @@ const updateEventStatusSchema = z.object({
 
 const updateEventSchema = z.object({
 	id: z.string(),
-	title: z.record(z.string(), z.string()).optional(),
-	description: z.record(z.string(), z.string()).optional(),
+	title: z.string().optional(),
+	description: z.string().optional(),
+	language: z.enum(["en", "am", "or", "ti", "so"]).optional(),
 	start_time: z.string().optional(),
 	end_time: z.string().optional(),
 	is_online: z.boolean().optional(),
 	meeting_url: z.string().optional().nullable(),
-	address: z.record(z.string(), z.string()).optional().nullable(),
+	address: z.string().optional().nullable(),
 	location: z.record(z.string(), z.string()).optional().nullable(),
 	cover_image_url: z.string().optional().nullable(),
 	max_attendees: z.number().optional().nullable(),
@@ -54,7 +55,7 @@ const deleteEventSchema = z.object({
 
 // Get all events with pagination
 export const getEvents = createServerFn({ method: "GET" })
-	.inputValidator(getEventsSchema)
+	.validator(getEventsSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const page = data.page || 1;
@@ -85,9 +86,7 @@ export const getEvents = createServerFn({ method: "GET" })
 		}
 
 		if (data.search) {
-			query = query.or(
-				`title->>en.ilike.%${data.search}%,title->>am.ilike.%${data.search}%`,
-			);
+			query = query.ilike("title", `%${data.search}%`);
 		}
 
 		const { data: events, error, count } = await query;
@@ -107,7 +106,7 @@ export const getEvents = createServerFn({ method: "GET" })
 
 // Get single event with full details
 export const getEvent = createServerFn({ method: "GET" })
-	.inputValidator(getEventSchema)
+	.validator(getEventSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -135,7 +134,7 @@ export const getEvent = createServerFn({ method: "GET" })
 
 // Get donations for an event
 export const getEventDonations = createServerFn({ method: "GET" })
-	.inputValidator(getEventSchema)
+	.validator(getEventSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -159,7 +158,7 @@ export const getEventDonations = createServerFn({ method: "GET" })
 
 // Update event status
 export const updateEventStatus = createServerFn({ method: "POST" })
-	.inputValidator(updateEventStatusSchema)
+	.validator(updateEventStatusSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -177,7 +176,7 @@ export const updateEventStatus = createServerFn({ method: "POST" })
 
 // Update event details
 export const updateEvent = createServerFn({ method: "POST" })
-	.inputValidator(updateEventSchema)
+	.validator(updateEventSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { id, ...updateData } = data;
@@ -200,7 +199,7 @@ export const updateEvent = createServerFn({ method: "POST" })
 
 // Delete event
 export const deleteEvent = createServerFn({ method: "POST" })
-	.inputValidator(deleteEventSchema)
+	.validator(deleteEventSchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();

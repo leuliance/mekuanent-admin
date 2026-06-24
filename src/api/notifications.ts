@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { assertSuperAdmin } from "@/lib/server-auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import type { Database } from "@/types/database.types";
+import { Constants, type Database } from "@/types/database.types";
 
 type NotificationType = Database["public"]["Enums"]["notification_type"];
 type NotificationInsert =
@@ -20,7 +20,7 @@ const getNotificationsSchema = z.object({
 });
 
 export const getNotifications = createServerFn({ method: "GET" })
-	.inputValidator(getNotificationsSchema)
+	.validator(getNotificationsSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const page = data.page || 1;
@@ -29,9 +29,11 @@ export const getNotifications = createServerFn({ method: "GET" })
 
 		let query = supabase
 			.from("notifications")
-			.select("*, profiles(first_name, last_name, avatar_url)", {
-				count: "exact",
-			})
+			.select(
+				// notifications has two FKs to profiles (user_id + sent_by); disambiguate.
+				"*, profiles:notifications_user_id_fkey(first_name, last_name, avatar_url)",
+				{ count: "exact" },
+			)
 			.order("created_at", { ascending: false })
 			.range(offset, offset + limit - 1);
 
@@ -60,22 +62,7 @@ export const getNotifications = createServerFn({ method: "GET" })
 const sendNotificationSchema = z.object({
 	title: z.record(z.string(), z.string()),
 	body: z.record(z.string(), z.string()),
-	type: z.enum([
-		"verse_of_day",
-		"new_content",
-		"event_reminder",
-		"event_update",
-		"donation_received",
-		"role_invitation",
-		"content_approved",
-		"content_rejected",
-		"room_started",
-		"donation_campaign_update",
-		"prayer_request",
-		"church_announcement",
-		"system_message",
-		"achievement",
-	]),
+	type: z.enum(Constants.public.Enums.notification_type),
 	data: z.record(z.string(), z.unknown()).optional().nullable(),
 	// If user_ids provided, send to specific users. Otherwise broadcast to all.
 	user_ids: z.array(z.string()).optional(),
@@ -83,7 +70,7 @@ const sendNotificationSchema = z.object({
 });
 
 export const sendNotification = createServerFn({ method: "POST" })
-	.inputValidator(sendNotificationSchema)
+	.validator(sendNotificationSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -137,7 +124,7 @@ const searchUsersSchema = z.object({
 });
 
 export const searchUsersForNotification = createServerFn({ method: "GET" })
-	.inputValidator(searchUsersSchema)
+	.validator(searchUsersSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { data: users, error } = await supabase
@@ -158,7 +145,7 @@ const deleteNotificationSchema = z.object({
 });
 
 export const deleteNotification = createServerFn({ method: "POST" })
-	.inputValidator(deleteNotificationSchema)
+	.validator(deleteNotificationSchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();

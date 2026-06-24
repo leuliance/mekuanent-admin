@@ -34,36 +34,31 @@
 //   );
 // };
 
-
-import { getCookies, setCookie } from '@tanstack/react-start/server'
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient } from "@supabase/ssr";
+import { getCookies, setCookie } from "@tanstack/react-start/server";
 import type { Database } from "@/types/database.types";
 
 export function getSupabaseServerClient() {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) {
-    throw new Error(
-      "Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY (check .env / .env.local)",
-    );
-  }
-  return createServerClient<Database>(
-    url,
-    key,
-    {
-      cookies: {
-        getAll() {
-          return Object.entries(getCookies()).map(([name, value]) => ({
-            name,
-            value,
-          }))
-        },
-        setAll(cookies) {
-          cookies.forEach((cookie) => {
-            setCookie(cookie.name, cookie.value)
-          })
-        },
-      },
-    },
-  )
+	const url = import.meta.env.VITE_SUPABASE_URL;
+	const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+	if (!url || !key) {
+		throw new Error(
+			"Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY (check .env / .env.local)",
+		);
+	}
+	return createServerClient<Database>(url, key, {
+		cookies: {
+			getAll() {
+				return Object.entries(getCookies()).map(([name, value]) => ({
+					name,
+					value,
+				}));
+			},
+			setAll(cookies) {
+				cookies.forEach((cookie) => {
+					setCookie(cookie.name, cookie.value);
+				});
+			},
+		},
+	});
 }

@@ -4,7 +4,8 @@ import { assertSuperAdmin } from "@/lib/server-auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database, Tables } from "@/types/database.types";
 
-type DonationCampaignUpdate = Database["public"]["Tables"]["donation_campaigns"]["Update"];
+type DonationCampaignUpdate =
+	Database["public"]["Tables"]["donation_campaigns"]["Update"];
 
 export type Donation = Tables<"donations">;
 export type DonationCampaign = Tables<"donation_campaigns">;
@@ -57,7 +58,7 @@ const deleteCampaignSchema = z.object({
 
 // Get all donations with pagination
 export const getDonations = createServerFn({ method: "GET" })
-	.inputValidator(getDonationsSchema)
+	.validator(getDonationsSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const page = data.page || 1;
@@ -103,7 +104,7 @@ export const getDonations = createServerFn({ method: "GET" })
 
 // Get all donation campaigns
 export const getCampaigns = createServerFn({ method: "GET" })
-	.inputValidator(getCampaignsSchema)
+	.validator(getCampaignsSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const page = data.page || 1;
@@ -134,9 +135,7 @@ export const getCampaigns = createServerFn({ method: "GET" })
 		}
 
 		if (data.search) {
-			query = query.or(
-				`title->>en.ilike.%${data.search}%,title->>am.ilike.%${data.search}%`,
-			);
+			query = query.ilike("title", `%${data.search}%`);
 		}
 
 		const { data: campaigns, error, count } = await query;
@@ -156,7 +155,7 @@ export const getCampaigns = createServerFn({ method: "GET" })
 
 // Get campaign details
 export const getCampaign = createServerFn({ method: "GET" })
-	.inputValidator(getCampaignSchema)
+	.validator(getCampaignSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -183,7 +182,7 @@ export const getCampaign = createServerFn({ method: "GET" })
 
 // Update campaign status
 export const updateCampaignStatus = createServerFn({ method: "POST" })
-	.inputValidator(updateCampaignStatusSchema)
+	.validator(updateCampaignStatusSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 
@@ -211,7 +210,7 @@ export const updateCampaignStatus = createServerFn({ method: "POST" })
 
 // Delete campaign
 export const deleteCampaign = createServerFn({ method: "POST" })
-	.inputValidator(deleteCampaignSchema)
+	.validator(deleteCampaignSchema)
 	.handler(async ({ data }) => {
 		await assertSuperAdmin();
 		const supabase = getSupabaseServerClient();
@@ -230,7 +229,7 @@ export const deleteCampaign = createServerFn({ method: "POST" })
 
 // Get campaign goal change history
 export const getCampaignGoalChanges = createServerFn({ method: "GET" })
-	.inputValidator(getCampaignGoalChangesSchema)
+	.validator(getCampaignGoalChangesSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { data: changes, error } = await supabase
@@ -244,7 +243,7 @@ export const getCampaignGoalChanges = createServerFn({ method: "GET" })
 
 // Get campaign payment methods
 export const getCampaignPaymentMethods = createServerFn({ method: "GET" })
-	.inputValidator(getCampaignPaymentMethodsSchema)
+	.validator(getCampaignPaymentMethodsSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { data: methods, error } = await supabase
