@@ -83,11 +83,15 @@ const SEVERITY_OPTIONS: { value: Severity; label: string }[] = [
 ];
 
 function localized(value: unknown): string {
-	if (!value) return "";
+	if (value == null) return "";
 	if (typeof value === "string") return value;
+	if (Array.isArray(value)) {
+		return value.map(localized).filter(Boolean).join(", ");
+	}
 	if (typeof value === "object") {
-		const obj = value as Record<string, string>;
-		return obj.am || obj.en || Object.values(obj)[0] || "";
+		const obj = value as Record<string, unknown>;
+		const pick = obj.am ?? obj.en ?? Object.values(obj)[0];
+		return typeof pick === "string" ? pick : pick != null ? localized(pick) : "";
 	}
 	return String(value);
 }
@@ -143,11 +147,11 @@ export const Route = createFileRoute("/_authenticated/dashboard/fasting/")({
 	},
 	pendingComponent: () => (
 		<div className="flex-1 overflow-auto p-6">
-			<div className="mx-auto max-w-6xl space-y-6">
+			<div className="mx-auto max-w-7xl space-y-6">
 				<Skeleton className="h-8 w-56" />
-				<div className="grid gap-6 lg:grid-cols-2">
-					<Skeleton className="h-96 rounded-xl" />
-					<Skeleton className="h-96 rounded-xl" />
+				<div className="grid gap-6 lg:grid-cols-3">
+					<Skeleton className="h-128 rounded-xl lg:col-span-2" />
+					<Skeleton className="h-128 rounded-xl" />
 				</div>
 			</div>
 		</div>
@@ -223,10 +227,10 @@ function FastingCalendar({ initialRange }: { initialRange: RangeRow[] }) {
 	const selectedEth = selected ? gregorianToEthiopian(selected) : undefined;
 
 	return (
-		<div className="rounded-xl border bg-card p-4">
-			<div className="mb-2 flex items-center gap-2">
+		<div className="flex h-full flex-col rounded-xl border bg-card p-5 shadow-sm">
+			<div className="mb-4 flex items-center gap-2">
 				<CalendarDays className="h-5 w-5 text-muted-foreground" />
-				<h2 className="font-semibold">Calendar</h2>
+				<h2 className="text-base font-semibold">Calendar</h2>
 				{loading && (
 					<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
 				)}
@@ -246,11 +250,17 @@ function FastingCalendar({ initialRange }: { initialRange: RangeRow[] }) {
 					showOutsideDays
 					modifiers={modifiers}
 					modifiersClassNames={modifiersClassNames}
+					className="p-0 [--cell-size:2.75rem] sm:[--cell-size:3.25rem] lg:[--cell-size:3.75rem]"
+					classNames={{
+						caption_label: "text-base font-semibold",
+						weekday:
+							"flex-1 rounded-md text-sm font-medium text-muted-foreground select-none",
+					}}
 				/>
 			</div>
 
 			{selected && (
-				<div className="mt-3 rounded-lg border bg-muted/40 p-3">
+				<div className="mt-5 rounded-lg border bg-muted/40 p-4">
 					<div className="flex items-center justify-between">
 						<div>
 							<p className="text-sm font-medium">
@@ -285,7 +295,7 @@ function FastingCalendar({ initialRange }: { initialRange: RangeRow[] }) {
 				</div>
 			)}
 
-			<div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+			<div className="mt-auto flex flex-wrap gap-3 pt-5 text-[11px] text-muted-foreground">
 				{Object.values(TIER_META).map((t) => (
 					<span key={t.label} className="flex items-center gap-1">
 						<span className={`h-2 w-2 rounded-full ${t.dot}`} /> {t.label}
@@ -451,8 +461,8 @@ function FastingPage() {
 	return (
 		<>
 			<div className="flex-1 overflow-auto p-6">
-				<div className="mx-auto max-w-6xl space-y-6">
-					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div className="mx-auto max-w-7xl space-y-6">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<div>
 							<h1 className="text-2xl font-bold">Fasting Calendar</h1>
 							<p className="text-muted-foreground mt-1">
@@ -465,10 +475,12 @@ function FastingPage() {
 						</Button>
 					</div>
 
-					<div className="grid gap-6 lg:grid-cols-2">
-						<FastingCalendar initialRange={range as RangeRow[]} />
+					<div className="grid gap-6 lg:grid-cols-3">
+						<div className="lg:col-span-2">
+							<FastingCalendar initialRange={range as RangeRow[]} />
+						</div>
 
-						<div className="rounded-xl border bg-card overflow-hidden">
+						<div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card">
 							<div className="flex items-center justify-between border-b p-4">
 								<div>
 									<h2 className="font-semibold">Fasting Periods</h2>
