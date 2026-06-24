@@ -6,6 +6,7 @@
     "dev": "dotenv -e .env.local -- sh -c \"NODE_OPTIONS='--import ./instrument.server.mjs' vite dev --port 3000\"",
     "build": "vite build",
     "preview": "vite preview",
+    "deploy": "vite build && npx wrangler deploy",
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
@@ -116,6 +117,7 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.5",
     "vitest": "^3.2.6",
-    "web-vitals": "^5.3.0"
+    "web-vitals": "^5.3.0",
+    "wrangler": "^4.104.0"
   }
 }

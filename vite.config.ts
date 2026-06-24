@@ -15,7 +15,19 @@ const config = defineConfig({
 	},
 	plugins: [
 		devtools(),
-		nitro(),
+		nitro({
+			// Target Cloudflare Workers (with static assets) for production builds.
+			// Override locally with NITRO_PRESET if you need a different target.
+			preset: process.env.NITRO_PRESET || "cloudflare_module",
+			cloudflare: {
+				wrangler: {
+					name: "mekuannent-admin",
+					// Serve the admin app from admin.mekuannent.app.
+					// The zone for mekuannent.app must exist in the Cloudflare account.
+					routes: [{ pattern: "admin.mekuannent.app", custom_domain: true }],
+				},
+			},
+		}),
 		// this is the plugin that enables path aliases
 		viteTsConfigPaths({
 			projects: ["./tsconfig.json"],
